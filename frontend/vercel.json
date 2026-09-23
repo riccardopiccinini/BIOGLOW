@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/observations/:path*",
+      "destination": "https://monitor-secchia-backend.onrender.com/observations/:path*"
+    },
+    {
+      "source": "/alerts/:path*",
+      "destination": "https://monitor-secchia-backend.onrender.com/alerts/:path*"
+    }
+  ]
+}
