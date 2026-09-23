@@ -1,8 +1,11 @@
 import useSWR from "swr";
 import { format } from "date-fns";
-import { SiImage, SiMusic } from "react-icons/si";
+import { LuImage, LuMusic } from "react-icons/lu";
 
-const fetcher = (url) => fetch(url).then((r) => r.json());
+const fetcher = (url) => fetch(url).then((r) => {
+  if (!r.ok) throw new Error("API error");
+  return r.json();
+});
 
 const statusStyles = {
   confirmed: "bg-success text-white",
@@ -51,7 +54,7 @@ export default function ObservationList({ filters }) {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <SiMusic className="text-3xl text-muted" />
+                <LuMusic className="text-3xl text-muted" />
               )}
             </div>
 
@@ -65,7 +68,7 @@ export default function ObservationList({ filters }) {
 
               <p className="text-sm text-muted flex items-center gap-2">
                 <span className="flex items-center gap-1">
-                  {obs.method === "image" ? <SiImage className="w-3 h-3" /> : <SiMusic className="w-3 h-3" />}
+                  {obs.method === "image" ? <LuImage className="w-3 h-3" /> : <LuMusic className="w-3 h-3" />}
                   {obs.method === "image" ? "Foto" : "Audio"}
                 </span>
                 <span>·</span>

@@ -1,4 +1,4 @@
-import { SiTimer, SiLeaf, SiUsers } from "react-icons/si";
+import { LuClock, LuLeaf, LuUsers } from "react-icons/lu";
 
 export default function StatsCard({ totalObservations, speciesCount, shannonIndex }) {
   return (
@@ -6,7 +6,7 @@ export default function StatsCard({ totalObservations, speciesCount, shannonInde
       {/* Totale osservazioni */}
       <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-primary">
         <div className="flex items-center gap-2 mb-1">
-          <SiTimer className="text-primary h-5 w-5" />
+          <LuClock className="text-primary h-5 w-5" />
           <span className="text-sm font-medium text-muted">Totale osservazioni</span>
         </div>
         <p className="text-3xl font-bold text-gray-900">{totalObservations}</p>
@@ -15,7 +15,7 @@ export default function StatsCard({ totalObservations, speciesCount, shannonInde
       {/* Specie distinte */}
       <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-success">
         <div className="flex items-center gap-2 mb-1">
-          <SiLeaf className="text-success h-5 w-5" />
+          <LuLeaf className="text-success h-5 w-5" />
           <span className="text-sm font-medium text-muted">Specie distinte</span>
         </div>
         <p className="text-3xl font-bold text-gray-900">{speciesCount}</p>
@@ -24,7 +24,7 @@ export default function StatsCard({ totalObservations, speciesCount, shannonInde
       {/* Indice di Shannon */}
       <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-warning">
         <div className="flex items-center gap-2 mb-1">
-          <SiUsers className="text-warning h-5 w-5" />
+          <LuUsers className="text-warning h-5 w-5" />
           <span className="text-sm font-medium text-muted">Indice di Shannon</span>
         </div>
         <p className="text-3xl font-bold text-gray-900">
