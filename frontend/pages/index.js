@@ -3,7 +3,7 @@ import useSWR from 'swr';
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
 export default function Home() {
-  const { data, error } = useSWR('http://127.0.0.1:8000/observations/stats', fetcher, { refreshInterval: 5000 });
+  const { data, error } = useSWR('https://monitor-secchia-backend.onrender.com/observations/stats', fetcher, { refreshInterval: 5000 });
 
   if (error) return <div style={{ padding: '2rem', color: 'red' }}>Failed to load data: {error.message}</div>;
   if (!data) return <div style={{ padding: '2rem' }}>Loading...</div>;
