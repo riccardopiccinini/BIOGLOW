@@ -1,0 +1,5 @@
+{
+  "rare": ["Species A", "Species B"],
+  "protected": ["Species C", "Species D"],
+  "invasive": ["Species E", "Species F"]
+}
