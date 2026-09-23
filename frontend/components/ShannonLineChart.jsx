@@ -2,7 +2,10 @@ import useSWR from "swr";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 
-const fetcher = (url) => fetch(url).then((r) => r.json());
+const fetcher = (url) => fetch(url).then((r) => {
+  if (!r.ok) throw new Error("API error");
+  return r.json();
+});
 
 export default function ShannonLineChart({ interval = "month" }) {
   const { data, error } = useSWR(
@@ -11,12 +14,12 @@ export default function ShannonLineChart({ interval = "month" }) {
   );
 
   if (error) return <div className="bg-white rounded-lg shadow-md p-6 text-red-500">Errore nel caricamento dei dati Shannon</div>;
-  if (!data) return <div className="bg-white rounded-lg shadow-md p-6 text-gray-500">Caricamento…</div>;
+  if (!data || !Array.isArray(data)) return <div className="bg-white rounded-lg shadow-md p-6 text-gray-500">Caricamento…</div>;
 
   // data atteso: [{ date: "2026-09-01T00:00:00Z", value: 1.23 }, ...]
   const chartData = data.map((d) => ({
-    date: format(new Date(d.date), "dd MMM"),
-    value: d.value,
+    date: d.date ? format(new Date(d.date), "dd MMM") : "N/A",
+    value: d.value ?? 0,
   }));
 
   return (
@@ -31,7 +34,7 @@ export default function ShannonLineChart({ interval = "month" }) {
           <YAxis tick={{ fontSize: 12, fill: "#6b7280" }} />
           <Tooltip
             contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "8px" }}
-            formatter={(value) => [value.toFixed(3), "Shannon"]}
+            formatter={(value) => [typeof value === 'number' ? value.toFixed(3) : value, "Shannon"]}
           />
           <Line
             type="monotone"

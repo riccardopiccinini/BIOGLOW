@@ -8,7 +8,10 @@ import SpeciesDistributionChart from "../components/SpeciesDistributionChart";
 import ObservationList from "../components/ObservationList";
 import AlertList from "../components/AlertList";
 
-const fetcher = (url) => fetch(url).then((r) => r.json());
+const fetcher = (url) => fetch(url).then((r) => {
+  if (!r.ok) throw new Error("API error");
+  return r.json();
+});
 
 export default function Home() {
   // Stato filtri
@@ -84,7 +87,7 @@ export default function Home() {
       <footer className="mt-10 text-center text-sm text-muted border-t border-gray-200 pt-6">
         <p>Dashboard aggiornata in tempo reale</p>
         <p className="mt-1">Dati: Supabase → Render (Backend) → Vercel (Frontend)</p>
-      </footer>
+      </footer
     </Layout>
   );
 }
