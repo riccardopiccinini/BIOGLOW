@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import useSWR from "swr";
-import Layout from "../../components/Layout";
+import Layout from "../components/Layout";
 import { format } from "date-fns";
 
 const obsFetcher = (url) => fetch(url).then((r) => {
