@@ -8,7 +8,7 @@ from supabase import create_client
 
 # Imports from local modules
 from .config import config
-from .db import supabase, get_observations, get_observation_by_id, update_observation_status, get_stats, get_alerts
+from .db import supabase, get_observations as db_get_observations, get_observation_by_id, update_observation_status, get_stats, get_alerts
 from .biodiversity import compute_shannon_time_series, shannon_index
 from .alerts import check_and_create_alert
 from .pipeline import identify_image, identify_audio, upload_to_storage
@@ -61,7 +61,7 @@ async def get_observations(
     limit: int = 10,
     order: str = "-date_time"
 ):
-    return await get_observations(station_id, method, start, end, limit, order)
+    return await db_get_observations(station_id, method, start, end, limit, order)
 
 @app.get("/observations/{id}")
 async def get_observation(id: str):
