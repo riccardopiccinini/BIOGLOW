@@ -8,7 +8,7 @@ from supabase import create_client
 
 # Imports from local modules
 from config import config
-from db import supabase, get_observations as db_get_observations, get_observation_by_id, update_observation_status, get_stats, get_alerts
+from db import supabase, get_observations as db_get_observations, get_observation_by_id, update_observation_status, get_stats, get_alerts, get_stations
 from biodiversity import compute_shannon_time_series, shannon_index
 from alerts import check_and_create_alert
 from pipeline import identify_image, identify_audio, upload_to_storage
@@ -94,6 +94,11 @@ async def get_shannon_time(
 @app.get("/alerts")
 async def get_all_alerts(status: Optional[str] = None):
     return await get_alerts(status_filter=status)
+
+@app.get("/stations")
+async def get_all_stations():
+    """Restituisce lista stazioni con coordinate per la mappa."""
+    return await get_stations()
 
 @app.post("/observations")
 async def receive_observation(

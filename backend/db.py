@@ -63,3 +63,40 @@ async def get_alerts(status=None):
 async def save_observation(observation: dict):
     res = supabase.table("osservazioni").insert(observation).execute()
     return res
+
+
+async def get_stations():
+    """Restituisce lista stazioni con coordinate per la mappa.
+    Per ora ritorna dati mock, in futuro si può creare tabella stations."""
+    # Stazioni mock per area Secchia
+    stations = [
+        {
+            "id": "SECCHIA-01",
+            "name": "Secchia Nord",
+            "lat": 44.6472,
+            "lon": 10.9258,
+            "shannon": 1.45
+        },
+        {
+            "id": "SECCHIA-02",
+            "name": "Secchia Centro",
+            "lat": 44.6321,
+            "lon": 10.9189,
+            "shannon": 1.32
+        },
+        {
+            "id": "SECCHIA-03",
+            "name": "Secchia Sud",
+            "lat": 44.6156,
+            "lon": 10.9012,
+            "shannon": 1.58
+        },
+        {
+            "id": "SECCHIA-04",
+            "name": "Expansione Est",
+            "lat": 44.6289,
+            "lon": 10.9456,
+            "shannon": 1.21
+        },
+    ]
+    return stations
