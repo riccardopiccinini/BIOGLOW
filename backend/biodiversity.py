@@ -22,7 +22,7 @@ def shannon_index(observations):
 
 async def compute_shannon_time_series(interval="month", filters=None):
     query = supabase.table("osservazioni").select("species, date_time")
-    
+
     if filters:
         if filters.get("station_id"):
             query = query.eq("station_id", filters["station_id"])
@@ -32,29 +32,35 @@ async def compute_shannon_time_series(interval="month", filters=None):
             query = query.gte("date_time", filters["start"])
         if filters.get("end"):
             query = query.lte("date_time", filters["end"])
-            
-    res = query.execute()
-    observations = res.data if res.data else []
-    
+
+    try:
+        res = query.execute()
+        observations = res.data if res.data else []
+    except Exception as e:
+        print(f"Supabase query error: {e}")
+        return []
+
     grouped = defaultdict(list)
     for obs in observations:
         dt_str = obs.get("date_time")
-        if not dt_str: continue
-        
+        if not dt_str:
+            continue
+
         try:
             dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
             if interval == "week":
                 start_of_week = dt - timedelta(days=dt.weekday())
                 key = start_of_week.strftime("%Y-%m-%d")
-            else: # month
+            else:  # month
                 key = dt.strftime("%Y-%m-01")
             grouped[key].append(obs)
-        except ValueError:
+        except (ValueError, AttributeError) as e:
+            print(f"Date parse error for {dt_str}: {e}")
             continue
-            
+
     time_series = []
     for date_key in sorted(grouped.keys()):
         val = shannon_index(grouped[date_key])
         time_series.append({"date": date_key, "value": val})
-        
+
     return time_series
