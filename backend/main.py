@@ -9,7 +9,7 @@ from supabase import create_client
 # Imports from local modules
 from config import config
 from db import supabase, get_observations as db_get_observations, get_observation_by_id, update_observation_status, get_stats, get_alerts, get_stations
-from biodiversity import compute_shannon_time_series, shannon_index
+from biodiversity import compute_shannon_time_series, compute_shannon_time_series_detail, shannon_index
 from alerts import check_and_create_alert
 from pipeline import identify_image, identify_audio, upload_to_storage
 
@@ -82,6 +82,23 @@ async def get_shannon_time(
     # Log error and return empty series to avoid 500 UI error
     print(f"shannon-time error: {e}")
     return []
+
+@app.get("/observations/shannon-time-detail")
+async def get_shannon_time_detail(
+    interval: str = "month",
+    station_id: Optional[str] = None,
+    method: Optional[str] = None,
+    start: Optional[str] = None,
+    end: Optional[str] = None
+):
+  """Debug endpoint: returns detailed per-group Shannon data."""
+  try:
+    filters = {"station_id": station_id, "method": method, "start": start, "end": end}
+    result = await compute_shannon_time_series_detail(interval=interval, filters=filters)
+    return result
+  except Exception as e:
+    print(f"shannon-time-detail error: {e}")
+    return JSONResponse(status_code=500, content={"error": str(e), "type": type(e).__name__})
 
 @app.get("/observations/{id}")
 async def get_observation(id: str):
