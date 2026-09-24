@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import useSWR from "swr";
 import Layout from "../../components/Layout";
-import { LuArrowLeft, LuCheckCircle, LuXCircle, LuClock, LuMusic } from "react-icons/lu";
+import { LuArrowLeft, LuCircleCheck, LuCircleX, LuClock, LuMusic } from "react-icons/lu";
 
 const fetcher = (url) => fetch(url).then((r) => {
   if (!r.ok) throw new Error("Errore nel caricamento dell'osservazione");
@@ -34,8 +34,8 @@ export default function ObservationDetail() {
   if (!obs) return <Layout><div className="text-center py-12 text-gray-500">Caricamento...</div></Layout>;
 
   const statusConfig = {
-    confirmed: { label: "Confermata", color: "bg-success", icon: <LuCheckCircle /> },
-    excluded: { label: "Esclusa", color: "bg-danger", icon: <LuXCircle /> },
+    confirmed: { label: "Confermata", color: "bg-success", icon: <LuCircleCheck /> },
+    excluded: { label: "Esclusa", color: "bg-danger", icon: <LuCircleX /> },
     pending: { label: "In attesa", color: "bg-warning", icon: <LuClock /> },
   };
 
