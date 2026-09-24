@@ -17,7 +17,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -47,8 +47,8 @@ async def observations_stats(
 ):
     res = await get_stats(station_id, method, start, end)
     return {
-        "total_observations": res["total"], 
-        "species_count": res["species_count"], 
+        "total_observations": res["total"],
+        "species_count": res["species_count"],
         "shannon_index": shannon_index(res["observations"])
     }
 
@@ -65,23 +65,6 @@ async def get_observations(
         return await db_get_observations(station_id, method, start, end, limit, order)
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e), "type": type(e).__name__})
-
-@app.get("/observations/{id}")
-async def get_observation(id: str):
-    obs = await get_observation_by_id(id)
-    if not obs:
-        raise HTTPException(status_code=404, detail="Osservazione non trovata")
-    return obs
-
-@app.patch("/observations/{id}")
-async def update_observation(id: str, data: dict):
-    if "verification_status" not in data:
-        raise HTTPException(status_code=400, detail="Solo verification_status può essere aggiornato")
-    
-    obs = await update_observation_status(id, data["verification_status"])
-    if not obs:
-        raise HTTPException(status_code=404, detail="Osservazione non trovata")
-    return obs
 
 @app.get("/observations/shannon-time")
 async def get_shannon_time(
@@ -100,6 +83,22 @@ async def get_shannon_time(
     print(f"shannon-time error: {e}")
     return []
 
+@app.get("/observations/{id}")
+async def get_observation(id: str):
+    obs = await get_observation_by_id(id)
+    if not obs:
+        raise HTTPException(status_code=404, detail="Osservazione non trovata")
+    return obs
+
+@app.patch("/observations/{id}")
+async def update_observation(id: str, data: dict):
+    if "verification_status" not in data:
+        raise HTTPException(status_code=400, detail="Solo verification_status può essere aggiornato")
+
+    obs = await update_observation_status(id, data["verification_status"])
+    if not obs:
+        raise HTTPException(status_code=404, detail="Osservazione non trovata")
+    return obs
 
 @app.get("/alerts")
 async def get_all_alerts(status: Optional[str] = None):
@@ -115,25 +114,25 @@ async def get_all_stations():
 
 @app.post("/observations")
 async def receive_observation(
-    file: UploadFile = File(...), 
-    method: str = "image", 
+    file: UploadFile = File(...),
+    method: str = "image",
     station_id: str = "SECCHIA-01"
 ):
     tmp_path = Path(f"/tmp/{file.filename}")
     with open(tmp_path, "wb") as f:
         f.write(await file.read())
-        
+
     if method == "image":
         result = await identify_image(tmp_path)
     elif method == "audio":
         result = await identify_audio(tmp_path)
     else:
         raise HTTPException(status_code=400, detail="Unsupported method")
-        
+
     # Upload to Supabase Storage
     with open(tmp_path, "rb") as f:
         media_url = await upload_to_storage(f.read(), file.filename, station_id)
-        
+
     observation = {
         "species": result["species"],
         "method": method,
@@ -143,13 +142,13 @@ async def receive_observation(
         "verification_status": "pending",
         "date_time": "2026-09-23T12:00:00Z" # Simplified, should be current time
     }
-    
+
     from db import save_observation
     save_res = await save_observation(observation)
-    
+
     if save_res.data:
         obs_id = save_res.data[0]["id"]
         await check_and_create_alert({**observation, "id": obs_id})
         return JSONResponse(content={"observation_id": obs_id, "species": result["species"], "confidence": result["confidence"]})
-    
+
     raise HTTPException(status_code=500, detail="Errore nel salvataggio dell'osservazione")
