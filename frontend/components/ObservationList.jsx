@@ -93,7 +93,7 @@ export default function ObservationList({ filters }) {
                   <div className="w-full bg-gray-200 rounded-full h-1.5">
                     <div
                       className="bg-success h-1.5 rounded-full transition-all duration-300"
-                      style={{ width: `${(obs.confidence ?? 0) * 100}%` }}}
+                      style={{ width: `${(obs.confidence ?? 0) * 100}%` }}
                     ></div>
                   </div>
                 </div>
