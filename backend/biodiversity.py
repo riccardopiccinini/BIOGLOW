@@ -1,6 +1,8 @@
 import math
 from supabase import create_client
 import os
+from datetime import datetime, timedelta
+from collections import defaultdict
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -25,7 +27,49 @@ def shannon_index(observations):
     return h
 
 async def compute_shannon():
-    # fetch observations from Supabase (you may filter by date range later)
     res = supabase.table("osservazioni").select("species").execute()
     observations = res.data if res.data else []
     return shannon_index(observations)
+
+async def compute_shannon_time_series(interval="month", filters=None):
+    # Fetch observations with date_time and species
+    query = supabase.table("osservazioni").select("species, date_time")
+    
+    if filters:
+        if filters.get("station_id"):
+            query = query.eq("station_id", filters["station_id"])
+        if filters.get("method"):
+            query = query.eq("method", filters["method"])
+        if filters.get("start"):
+            query = query.gte("date_time", filters["start"])
+        if filters.get("end"):
+            query = query.lte("date_time", filters["end"])
+            
+    res = query.execute()
+    observations = res.data if res.data else []
+    
+    # Group by interval
+    grouped = defaultdict(list)
+    for obs in observations:
+        dt_str = obs.get("date_time")
+        if not dt_str: continue
+        
+        # Simple date parsing (ISO format expected)
+        dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+        
+        if interval == "week":
+            # Normalize to start of week (Monday)
+            start_of_week = dt - timedelta(days=dt.weekday())
+            key = start_of_week.strftime("%Y-%m-%d")
+        else: # month
+            key = dt.strftime("%Y-%m-01")
+            
+        grouped[key].append(obs)
+    
+    # Calculate Shannon for each group
+    time_series = []
+    for date_key in sorted(grouped.keys()):
+        val = shannon_index(grouped[date_key])
+        time_series.append({"date": date_key, "value": val})
+        
+    return time_series
