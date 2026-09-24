@@ -5,7 +5,7 @@ supabase = create_client(config.SUPABASE_URL, config.SUPABASE_KEY)
 
 async def get_observations(station_id=None, method=None, start=None, end=None, limit=10, order="-date_time"):
     query = supabase.table("osservazioni").select("*")
-    
+
     if station_id:
         query = query.eq("station_id", station_id)
     if method:
@@ -14,13 +14,14 @@ async def get_observations(station_id=None, method=None, start=None, end=None, l
         query = query.gte("date_time", start)
     if end:
         query = query.lte("date_time", end)
-        
+
+    # Supabase postgrest-py usa desc=True/False invece di ascending
     if order.startswith("-"):
         col = order[1:]
-        query = query.order(col, ascending=False)
+        query = query.order(col, desc=True)
     else:
-        query = query.order(order, ascending=True)
-        
+        query = query.order(order, desc=False)
+
     query = query.limit(limit)
     res = query.execute()
     return res.data if res.data else []

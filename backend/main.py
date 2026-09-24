@@ -100,7 +100,7 @@ async def get_shannon_time(
 @app.get("/alerts")
 async def get_all_alerts(status: Optional[str] = None):
     try:
-        return await get_alerts(status_filter=status)
+        return await get_alerts(status=status)
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e), "type": type(e).__name__})
 
