@@ -1,3 +1,4 @@
+import { useState } from "react";
 import useSWR from "swr";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
@@ -27,6 +28,7 @@ const typeColors = {
 };
 
 export default function AlertList({ statusFilter = "" }) {
+  const [expanded, setExpanded] = useState(false);
   const params = new URLSearchParams();
   if (statusFilter) params.append("status", statusFilter);
 
@@ -35,17 +37,19 @@ export default function AlertList({ statusFilter = "" }) {
     fetcher
   );
 
+  const alerts = Array.isArray(data) ? data.slice(0, expanded ? 20 : 5) : [];
+
   if (error) return <div className="bg-white rounded-lg shadow-md p-6 text-red-500">Errore nel caricamento degli alert</div>;
-  if (!data || !Array.isArray(data)) return <div className="bg-white rounded-lg shadow-md p-6 text-gray-500">Caricamento…</div>;
+  if (!data) return <div className="bg-white rounded-lg shadow-md p-6 text-gray-500">Caricamento…</div>;
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
       <h2 className="text-lg font-semibold mb-4 text-primary">Alert specie di interesse</h2>
-      {data.length === 0 && (
+      {alerts.length === 0 && (
         <p className="text-gray-500 text-center py-4">Nessun alert</p>
       )}
       <div className="space-y-3">
-        {data.map((alert) => (
+        {alerts.map((alert) => (
           <div key={alert.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div>
               <p className="font-medium text-gray-900">{alert.species}</p>
@@ -58,6 +62,11 @@ export default function AlertList({ statusFilter = "" }) {
             </span>
           </div>
         ))}
+      </div>
+      <div className="mt-4 text-center">
+        <button className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark" onClick={() => setExpanded(!expanded)}>
+          {expanded ? "Mostra di meno" : "Mostra di più"}
+        </button>
       </div>
     </div>
   );

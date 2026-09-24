@@ -91,11 +91,15 @@ async def get_shannon_time(
     start: Optional[str] = None,
     end: Optional[str] = None
 ):
-    try:
-        filters = {"station_id": station_id, "method": method, "start": start, "end": end}
-        return await compute_shannon_time_series(interval=interval, filters=filters)
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e), "type": type(e).__name__})
+  try:
+    filters = {"station_id": station_id, "method": method, "start": start, "end": end}
+    result = await compute_shannon_time_series(interval=interval, filters=filters)
+    return result
+  except Exception as e:
+    # Log error and return empty series to avoid 500 UI error
+    print(f"shannon-time error: {e}")
+    return []
+
 
 @app.get("/alerts")
 async def get_all_alerts(status: Optional[str] = None):
