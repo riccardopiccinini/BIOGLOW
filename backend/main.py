@@ -8,7 +8,7 @@ from supabase import create_client
 
 # Imports from local modules
 from config import config
-from db import supabase, get_observations as db_get_observations, get_observation_by_id, update_observation_status, get_stats, get_alerts, get_stations
+from db import supabase, get_observations as db_get_observations, get_observation_by_id, update_observation_status, get_stats, get_alerts, get_stations, get_station_detail
 from biodiversity import compute_shannon_time_series, compute_shannon_time_series_detail, shannon_index
 from alerts import check_and_create_alert
 from pipeline import identify_image, identify_audio, upload_to_storage
@@ -128,6 +128,14 @@ async def get_all_alerts(status: Optional[str] = None):
 async def get_all_stations():
     """Restituisce lista stazioni con coordinate per la mappa."""
     return await get_stations()
+
+@app.get("/stations/{station_id}")
+async def get_station(station_id: str):
+    """Restituisce dettagli di una singola stazione."""
+    detail = await get_station_detail(station_id)
+    if not detail:
+        raise HTTPException(status_code=404, detail="Stazione non trovata")
+    return detail
 
 @app.post("/observations")
 async def receive_observation(

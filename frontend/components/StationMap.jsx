@@ -1,6 +1,8 @@
 import React from 'react';
+import { useRouter } from 'next/router';
 
 export default function StationMap() {
+  const router = useRouter();
   // Dati simulati per le stazioni
   const stations = [
     { id: 'SECCHIA-01', name: 'Stazione Nord', index: 2.45, status: 'alto', x: '20%', y: '30%' },
@@ -17,6 +19,10 @@ export default function StationMap() {
     }
   };
 
+  const handleStationClick = (id) => {
+    router.push(`/stations/${id}`);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
       <h2 className="text-lg font-semibold mb-4 text-primary">Mappa Biodiversità Stazioni</h2>
@@ -25,12 +31,13 @@ export default function StationMap() {
         <div className="absolute inset-0 flex items-center justify-center opacity-20">
           <span className="text-blue-400 font-bold text-xl uppercase tracking-widest">Mappa Area Secchia</span>
         </div>
-        
+
         {stations.map((s) => (
-          <div 
+          <div
             key={s.id}
             className="absolute group cursor-pointer"
             style={{ left: s.x, top: s.y }}
+            onClick={() => handleStationClick(s.id)}
           >
             <div className={`w-4 h-4 rounded-full ${getStatusColor(s.status)} ring-4 ring-white shadow-sm transition-transform hover:scale-150`} />
             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">

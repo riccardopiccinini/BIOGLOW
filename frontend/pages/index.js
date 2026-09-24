@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useSWR from "swr";
+import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import FilterBar from "../components/FilterBar";
 import StatsCard from "../components/StatsCard";
@@ -16,12 +17,43 @@ const fetcher = (url) => fetch(url).then((r) => {
 });
 
 export default function Home() {
+  const router = useRouter();
   const [filters, setFilters] = useState({
     station: "",
     method: "",
     startDate: "",
     endDate: "",
   });
+
+  // Sync filters with query params on mount and on route change
+  useEffect(() => {
+    const { station, method, startDate, endDate } = router.query;
+    setFilters({
+      station: station ?? "",
+      method: method ?? "",
+      startDate: startDate ?? "",
+      endDate: endDate ?? "",
+    });
+  }, [router.query]);
+
+  // Update URL when filters change (shallow push to preserve state)
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    const { station, method, startDate, endDate } = newFilters;
+    const params = {};
+    if (station) params.station = station;
+    if (method) params.method = method;
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    router.push(
+      {
+        pathname: router.pathname,
+        query: params,
+      },
+      undefined,
+      { shallow: true }
+    );
+  };
 
   const { data: stats, error: statsError } = useSWR(
     "/observations/stats",
@@ -60,7 +92,7 @@ export default function Home() {
   return (
     <Layout>
       <div className="flex flex-col lg:flex-row gap-6 p-4 lg:p-8 bg-gray-50 min-h-screen">
-        
+
         {/* SIDEBAR: Filtri e Controllo */}
         <aside className="w-full lg:w-80 shrink-0 space-y-6">
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 sticky top-8">
@@ -68,7 +100,10 @@ export default function Home() {
               <span className="w-2 h-6 bg-primary rounded-full"></span>
               Filtri di Controllo
             </h2>
-            <FilterBar onFilterChange={setFilters} initialFilters={filters} />
+            <FilterBar
+              value={filters}
+              onFilterChange={handleFilterChange}
+            />
             <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
               <p className="text-xs text-blue-700 leading-relaxed">
                 I filtri aggiornano automaticamente tutti i grafici e le liste della dashboard.
@@ -79,7 +114,7 @@ export default function Home() {
 
         {/* MAIN CONTENT */}
         <main className="flex-1 space-y-8">
-          
+
           {/* HEADER */}
           <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
             <div>

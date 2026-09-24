@@ -7,9 +7,16 @@ const fetcher = (url) => fetch(url).then((r) => {
   return r.json();
 });
 
-export default function ShannonLineChart({ interval = "month" }) {
+export default function ShannonLineChart({ interval = "month", filters = {} }) {
+  const params = new URLSearchParams();
+  params.append("interval", interval);
+  if (filters.station) params.append("station_id", filters.station);
+  if (filters.method) params.append("method", filters.method);
+  if (filters.startDate) params.append("start", filters.startDate);
+  if (filters.endDate) params.append("end", filters.endDate);
+
   const { data, error } = useSWR(
-    `/observations/shannon-time?interval=${interval}`,
+    `/observations/shannon-time?${params.toString()}`,
     fetcher
   );
 

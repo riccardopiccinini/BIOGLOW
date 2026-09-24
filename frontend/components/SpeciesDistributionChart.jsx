@@ -1,9 +1,11 @@
 import useSWR from "swr";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
+import { useRouter } from "next/router";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
 export default function SpeciesDistributionChart({ filters }) {
+  const router = useRouter();
   const params = new URLSearchParams();
   if (filters.station) params.append("station_id", filters.station);
   if (filters.method) params.append("method", filters.method);
@@ -36,7 +38,7 @@ export default function SpeciesDistributionChart({ filters }) {
         Distribuzione osservazioni per specie
       </h2>
       <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={chartData} layout="vertical">
+        <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis type="number" tick={{ fontSize: 12, fill: "#6b7280" }} />
           <YAxis
@@ -45,9 +47,22 @@ export default function SpeciesDistributionChart({ filters }) {
             tick={{ fontSize: 12, fill: "#6b7280" }}
             width={120}
           />
+          {/* Custom Tooltip that is clickable to navigate to species detail */}
           <Tooltip
-            contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "8px" }}
-            formatter={(value) => [value, "osservazioni"]}
+            contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "8px" }}
+            content={({ label, value, payload }) => {
+              const species = label; // species name from YAxis
+              return (
+                <div
+                  className="flex flex-col items-start gap-2"
+                  onClick={() => router.push(`/species-distinct?species=${encodeURIComponent(species)}`)}
+                  style={{ cursor: "pointer", userSelect: "none" }}
+                >
+                  <div className="font-medium">{species}</div>
+                  <div className="text-sm text-muted">{value} osservazioni</div>
+                </div>
+              );
+            }}
           />
           <Bar dataKey="count" fill="#27ae60" radius={[0, 4, 4, 0]} />
         </BarChart>

@@ -74,7 +74,24 @@ def generate_mock_observations(count=30):
 async def load_demo_data():
     """Carica dati demo in Supabase (versione async)."""
     print("Generazione osservazioni mock...")
-    observations = generate_mock_observations(35)
+    observations = generate_mock_observations(30)  # reduced to make room for forced alerts
+
+    # Aggiungi alcune osservazioni forzate per garantire alert
+    forced_alerts = [
+        {"species": "Aquila chrysaetos", "category": "bird", "method": "image", "confidence": 0.80, "source": "iNaturalist (mock)", "verification_status": "pending"},
+        {"species": "Falco peregrinus", "category": "bird", "method": "image", "confidence": 0.85, "source": "iNaturalist (mock)", "verification_status": "confirmed"},
+        {"species": "Psittacula krameri", "category": "bird", "method": "image", "confidence": 0.90, "source": "iNaturalist (mock)", "verification_status": "pending"},
+    ]
+    base_date = datetime.datetime(2026, 6, 1)
+    for i, spec in enumerate(forced_alerts):
+        obs = spec.copy()
+        # Varia date leggermente
+        obs_date = base_date + datetime.timedelta(days=i*10, hours=12)
+        obs["date_time"] = obs_date.isoformat() + "Z"
+        obs["media_url"] = f"{PLACEHOLDER_BASE}{obs['species'].replace(' ', '_').lower()}_{i}.jpg" if obs["method"] == "image" else f"{PLACEHOLDER_BASE}{obs['species'].replace(' ', '_').lower()}_{i}.wav"
+        obs["station_id"] = "SECCHIA-01"
+        obs["confidence"] = round(obs["confidence"] + random.uniform(-0.02, 0.02), 2)
+        observations.append(obs)
 
     print(f"Inserimento {len(observations)} osservazioni in Supabase...")
     inserted = 0

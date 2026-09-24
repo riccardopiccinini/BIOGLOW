@@ -1,5 +1,6 @@
 import useSWR from "swr";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { useRouter } from "next/router";
 
 const fetcher = (url) => fetch(url).then((r) => {
   if (!r.ok) throw new Error("API error");
@@ -7,6 +8,7 @@ const fetcher = (url) => fetch(url).then((r) => {
 });
 
 export default function MethodDistributionChart({ filters }) {
+  const router = useRouter();
   const params = new URLSearchParams();
   if (filters.station) params.append("station_id", filters.station);
   if (filters.startDate) params.append("start", filters.startDate);
@@ -50,7 +52,25 @@ export default function MethodDistributionChart({ filters }) {
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Pie>
-          <Tooltip />
+          {/* Custom Tooltip that is clickable to navigate to method page */}
+          <Tooltip
+            contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "8px" }}
+            content={({ active, payload, label }) => {
+              if (active === null || payload.length === 0) return null;
+              const { name } = payload[0]; // name is "Audio" or "Foto"
+              const method = name === "Audio" ? "audio" : "image";
+              return (
+                <div
+                  className="flex flex-col items-start gap-2"
+                  onClick={() => router.push(`/observations-by-method/${method}`)}
+                  style={{ cursor: "pointer", userSelect: "none" }}
+                >
+                  <div className="font-medium">{name}</div>
+                  <div className="text-sm text-muted">{payload[0].value} osservazioni</div>
+                </div>
+              );
+            }}
+          />
           <Legend />
         </PieChart>
       </ResponsiveContainer>
