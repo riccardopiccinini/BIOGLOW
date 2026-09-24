@@ -61,7 +61,10 @@ async def get_observations(
     limit: int = 10,
     order: str = "-date_time"
 ):
-    return await db_get_observations(station_id, method, start, end, limit, order)
+    try:
+        return await db_get_observations(station_id, method, start, end, limit, order)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e), "type": type(e).__name__})
 
 @app.get("/observations/{id}")
 async def get_observation(id: str):
@@ -82,18 +85,24 @@ async def update_observation(id: str, data: dict):
 
 @app.get("/observations/shannon-time")
 async def get_shannon_time(
-    interval: str = "month", 
-    station_id: Optional[str] = None, 
-    method: Optional[str] = None, 
-    start: Optional[str] = None, 
+    interval: str = "month",
+    station_id: Optional[str] = None,
+    method: Optional[str] = None,
+    start: Optional[str] = None,
     end: Optional[str] = None
 ):
-    filters = {"station_id": station_id, "method": method, "start": start, "end": end}
-    return await compute_shannon_time_series(interval=interval, filters=filters)
+    try:
+        filters = {"station_id": station_id, "method": method, "start": start, "end": end}
+        return await compute_shannon_time_series(interval=interval, filters=filters)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e), "type": type(e).__name__})
 
 @app.get("/alerts")
 async def get_all_alerts(status: Optional[str] = None):
-    return await get_alerts(status_filter=status)
+    try:
+        return await get_alerts(status_filter=status)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e), "type": type(e).__name__})
 
 @app.get("/stations")
 async def get_all_stations():
