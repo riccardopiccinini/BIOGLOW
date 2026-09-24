@@ -7,11 +7,11 @@ from pathlib import Path
 from supabase import create_client
 
 # Imports from local modules
-from .config import config
-from .db import supabase, get_observations as db_get_observations, get_observation_by_id, update_observation_status, get_stats, get_alerts
-from .biodiversity import compute_shannon_time_series, shannon_index
-from .alerts import check_and_create_alert
-from .pipeline import identify_image, identify_audio, upload_to_storage
+from config import config
+from db import supabase, get_observations as db_get_observations, get_observation_by_id, update_observation_status, get_stats, get_alerts
+from biodiversity import compute_shannon_time_series, shannon_index
+from alerts import check_and_create_alert
+from pipeline import identify_image, identify_audio, upload_to_storage
 
 app = FastAPI()
 
@@ -126,7 +126,7 @@ async def receive_observation(
         "date_time": "2026-09-23T12:00:00Z" # Simplified, should be current time
     }
     
-    from .db import save_observation
+    from db import save_observation
     save_res = await save_observation(observation)
     
     if save_res.data:
