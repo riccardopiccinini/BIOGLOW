@@ -1,12 +1,6 @@
 import json
-import os
-from supabase import create_client
 from pathlib import Path
-
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+from .db import supabase, config
 
 # Load reference lists
 REF_PATH = Path(__file__).resolve().parents[1] / "docs" / "species_reference.json"

@@ -1,38 +1,26 @@
 import math
-from supabase import create_client
-import os
-from datetime import datetime, timedelta
 from collections import defaultdict
-
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+from datetime import datetime, timedelta
+from .db import supabase
 
 def shannon_index(observations):
-    # observations: list of dicts with 'species'
     total = len(observations)
     if total == 0:
         return 0.0
-    # count per species
+    
     counts = {}
     for obs in observations:
         sp = obs.get('species')
         if sp:
             counts[sp] = counts.get(sp, 0) + 1
+            
     h = 0.0
     for cnt in counts.values():
         p = cnt / total
         h -= p * math.log(p)
     return h
 
-async def compute_shannon():
-    res = supabase.table("osservazioni").select("species").execute()
-    observations = res.data if res.data else []
-    return shannon_index(observations)
-
 async def compute_shannon_time_series(interval="month", filters=None):
-    # Fetch observations with date_time and species
     query = supabase.table("osservazioni").select("species, date_time")
     
     if filters:
@@ -48,25 +36,22 @@ async def compute_shannon_time_series(interval="month", filters=None):
     res = query.execute()
     observations = res.data if res.data else []
     
-    # Group by interval
     grouped = defaultdict(list)
     for obs in observations:
         dt_str = obs.get("date_time")
         if not dt_str: continue
         
-        # Simple date parsing (ISO format expected)
-        dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
-        
-        if interval == "week":
-            # Normalize to start of week (Monday)
-            start_of_week = dt - timedelta(days=dt.weekday())
-            key = start_of_week.strftime("%Y-%m-%d")
-        else: # month
-            key = dt.strftime("%Y-%m-01")
+        try:
+            dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+            if interval == "week":
+                start_of_week = dt - timedelta(days=dt.weekday())
+                key = start_of_week.strftime("%Y-%m-%d")
+            else: # month
+                key = dt.strftime("%Y-%m-01")
+            grouped[key].append(obs)
+        except ValueError:
+            continue
             
-        grouped[key].append(obs)
-    
-    # Calculate Shannon for each group
     time_series = []
     for date_key in sorted(grouped.keys()):
         val = shannon_index(grouped[date_key])
