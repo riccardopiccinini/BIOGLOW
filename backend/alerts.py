@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
-from .db import supabase, config
+from db import supabase
+from config import config
 
 # Load reference lists
 REF_PATH = Path(__file__).resolve().parents[1] / "docs" / "species_reference.json"

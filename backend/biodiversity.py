@@ -1,7 +1,7 @@
 import math
 from collections import defaultdict
 from datetime import datetime, timedelta
-from .db import supabase
+from db import supabase
 
 def shannon_index(observations):
     total = len(observations)

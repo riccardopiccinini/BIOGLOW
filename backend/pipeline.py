@@ -1,7 +1,8 @@
 import httpx
 import uuid
 from pathlib import Path
-from .db import supabase, config
+from db import supabase
+from config import config
 
 async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -> str:
     """Uploads a file to Supabase Storage and returns the public URL."""
