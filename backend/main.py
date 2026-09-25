@@ -13,6 +13,7 @@ from db import supabase, get_observations as db_get_observations, get_observatio
 from biodiversity import compute_shannon_time_series, compute_shannon_time_series_detail, shannon_index
 from alerts import check_and_create_alert
 from pipeline import identify_image, identify_audio, upload_to_storage
+from constants import CONFIDENCE_THRESHOLDS
 
 app = FastAPI()
 
@@ -80,7 +81,6 @@ async def get_shannon_time(
     result = await compute_shannon_time_series(interval=interval, filters=filters)
     return result
   except Exception as e:
-    # Log error and return empty series to avoid 500 UI error
     print(f"shannon-time error: {e}")
     return []
 
@@ -92,7 +92,6 @@ async def get_shannon_time_detail(
     start: Optional[str] = None,
     end: Optional[str] = None
 ):
-  """Debug endpoint: returns detailed per-group Shannon data."""
   try:
     filters = {"station_id": station_id, "method": method, "start": start, "end": end}
     result = await compute_shannon_time_series_detail(interval=interval, filters=filters)
@@ -127,12 +126,10 @@ async def get_all_alerts(status: Optional[str] = None):
 
 @app.get("/stations")
 async def get_all_stations():
-    """Restituisce lista stazioni con coordinate per la mappa."""
     return await get_stations()
 
 @app.get("/stations/{station_id}")
 async def get_station(station_id: str):
-    """Restituisce dettagli di una singola stazione."""
     detail = await get_station_detail(station_id)
     if not detail:
         raise HTTPException(status_code=404, detail="Stazione non trovata")
@@ -155,16 +152,19 @@ async def receive_observation(
     else:
         raise HTTPException(status_code=400, detail="Unsupported method")
 
-    # Upload to Supabase Storage
     with open(tmp_path, "rb") as f:
         media_url = await upload_to_storage(f.read(), file.filename, station_id)
 
-    # Auto-confirm if confidence >= 0.85
+    # Implement Confidence Filter
     confidence = result["confidence"]
-    verification_status = "confirmed" if confidence >= 0.85 else "pending"
-    
-    # LOGGING per debug su Render
-    print(f"DEBUG: New observation - Species: {result['species']}, Confidence: {confidence}, Status: {verification_status}")
+    if confidence >= CONFIDENCE_THRESHOLDS["auto_confirm"]:
+        verification_status = "confirmed"
+    elif confidence >= CONFIDENCE_THRESHOLDS["min_acceptable"]:
+        verification_status = "pending"
+    else:
+        verification_status = "excluded"
+
+    print(f"DEBUG: Obs {result['species']} | Conf: {confidence} | Status: {verification_status}")
 
     observation = {
         "species": result["species"],

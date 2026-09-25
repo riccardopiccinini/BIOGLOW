@@ -20,7 +20,6 @@ async def get_observations(station_id=None, method=None, start=None, end=None, l
     if end:
         query = query.lte("date_time", end)
 
-    # Supabase postgrest-py usa desc=True/False invece di ascending
     if order.startswith("-"):
         col = order[1:]
         query = query.order(col, desc=True)
@@ -56,7 +55,7 @@ async def get_stats(station_id=None, method=None, start=None, end=None):
     return {
         "total": total,
         "species_count": species_count,
-        "observations": data # returned for shannon index calculation
+        "observations": data
     }
 
 async def get_alerts(status=None):
@@ -72,34 +71,34 @@ async def save_observation(observation: dict):
 
 
 async def get_stations():
-    """Restituisce lista stazioni con coordinate per la mappa.
-    Per ora ritorna dati mock, in futuro si può creare tabella stations."""
-    return MOCK_STATIONS
-
+    """Recupera la lista delle stazioni dalla tabella Supabase."""
+    try:
+        res = supabase.table("stations").select("*").execute()
+        return res.data if res.data else []
+    except Exception as e:
+        print(f"Error fetching stations from DB: {e}")
+        return []
 
 async def get_station_detail(station_id: str):
-    """Restituisce dettagli di una stazione: info base, stats, specie osservate, ultime osservazioni."""
-    # Ottenere info stazione dalla lista mock (o da tabella se esistente)
-    stations = await get_stations()
-    station_info = next((s for s in stations if s["id"] == station_id), None)
+    """Recupera dettagli di una stazione dal DB."""
+    # 1. Info stazione
+    res_station = supabase.table("stations").select("*").eq("id", station_id).single().execute()
+    station_info = res_station.data
     if not station_info:
         return None
 
-    # Stats globali per quella stazione (tutto il periodo)
+    # 2. Stats globali
     stats = await get_stats(station_id=station_id)
     total_obs = stats["total"]
-    species_set = set(item["species"] for item in stats["observations"] if item.get("species"))
-    species_count = len(species_set)
+    species_count = stats["species_count"]
     shannon_global = 0.0
     if total_obs > 0:
-        # Calcola Shannon usando le osservazioni della stazione
         shannon_global = shannon_index(stats["observations"])
 
-    # Ultime 5 osservazioni per quella stazione
+    # 3. Ultime 5 osservazioni
     latest_obs = await get_observations(station_id=station_id, limit=5, order="-date_time")
 
-    # Specie osservate (lista di specie con conteggio)
-    # Possiamo riutilizzare stats["observations"] per conteggio
+    # 4. Specie osservate
     species_counts = {}
     for obs in stats["observations"]:
         sp = obs.get("species")

@@ -23,6 +23,12 @@ OBSERVATION_METHODS = {
     "audio": "Audio",
 }
 
+# Confidence thresholds
+CONFIDENCE_THRESHOLDS = {
+    "auto_confirm": 0.85, # Above this, auto-confirmed
+    "min_acceptable": 0.60, # Below this, auto-excluded
+}
+
 # Station status thresholds (based on Shannon index)
 STATION_STATUS_THRESHOLDS = {
     "alto": 2.0,      # Shannon > 2.0
@@ -37,38 +43,6 @@ MAX_PAGE_LIMIT = 1000
 # Default date format
 DATE_FORMAT = "%Y-%m-%d"
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
-
-# Mock data fallbacks
-MOCK_STATIONS = [
-    {
-        "id": "SECCHIA-01",
-        "name": "Secchia Nord",
-        "lat": 44.6472,
-        "lon": 10.9258,
-        "shannon": 1.45
-    },
-    {
-        "id": "SECCHIA-02",
-        "name": "Secchia Centro",
-        "lat": 44.6321,
-        "lon": 10.9189,
-        "shannon": 1.32
-    },
-    {
-        "id": "SECCHIA-03",
-        "name": "Secchia Sud",
-        "lat": 44.6156,
-        "lon": 10.9012,
-        "shannon": 1.58
-    },
-    {
-        "id": "SECCHIA-04",
-        "name": "Expansione Est",
-        "lat": 44.6289,
-        "lon": 10.9456,
-        "shannon": 1.21
-    },
-]
 
 # Error messages
 ERROR_MESSAGES = {
