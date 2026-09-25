@@ -11,6 +11,14 @@
     {
       "source": "/reports/:path*",
       "destination": "https://monitor-secchia-backend.onrender.com/reports/:path*"
+    },
+    {
+      "source": "/stations/:path*",
+      "destination": "https://monitor-secchia-backend.onrender.com/stations/:path*"
+    },
+    {
+      "source": "/stations",
+      "destination": "https://monitor-secchia-backend.onrender.com/stations"
     }
   ]
 }
