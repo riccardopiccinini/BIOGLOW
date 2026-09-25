@@ -16,7 +16,7 @@ export default function MethodDistributionChart({ filters }) {
   params.append("limit", "1000");
 
   const { data, error } = useSWR(
-    `/observations?${params.toString()}`,
+    \`/observations?\${params.toString()}\`,
     fetcher
   );
 
@@ -49,20 +49,19 @@ export default function MethodDistributionChart({ filters }) {
             dataKey="value"
           >
             {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
+              <Cell key={\`cell-\${index}\`} fill={entry.color} />
             ))}
           </Pie>
-          {/* Custom Tooltip that is clickable to navigate to method page */}
           <Tooltip
             contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "8px" }}
-            content={({ active, payload, label }) => {
+            content={({ active, payload }) => {
               if (active === null || payload.length === 0) return null;
-              const { name } = payload[0]; // name is "Audio" or "Foto"
+              const { name } = payload[0];
               const method = name === "Audio" ? "audio" : "image";
               return (
                 <div
                   className="flex flex-col items-start gap-2"
-                  onClick={() => router.push(`/observations-by-method/${method}`)}
+                  onClick={() => router.push(\`/observations?method=\${method}\`)}
                   style={{ cursor: "pointer", userSelect: "none" }}
                 >
                   <div className="font-medium">{name}</div>
