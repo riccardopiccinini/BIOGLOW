@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import useSWR from 'swr';
 import { useRouter } from 'next/router';
 import { STATION_STATUS } from "../lib/constants";
 
@@ -23,16 +22,17 @@ export default function StationMap() {
       })
       .catch((err) => {
         console.error("Failed to load stations:", err);
-        setStations([
-          { id: 'SECCHIA-01', name: 'Stazione Nord', index: 2.45, status: 'alto', lat: 44.92, lon: 10.92 },
-          { id: 'SECCHIA-02', name: 'Stazione Centro', index: 1.82, status: 'medio', lat: 44.90, lon: 10.90 },
-          { id: 'SECCHIA-03', name: 'Stazione Sud', index: 1.10, status: 'basso', lat: 44.88, lon: 10.88 },
-        ]);
+        setStations([]);
         setLoading(false);
+        setError(err);
       });
   }, []);
 
-  const getStatusConfig = (status) => STATION_STATUS[status] || STATION_STATUS.basso;
+  const getStatusConfig = (shannon) => {
+    if (shannon >= 2.0) return STATION_STATUS.alto;
+    if (shannon >= 1.0) return STATION_STATUS.medio;
+    return STATION_STATUS.basso;
+  };
 
   const getPosition = (lat, lng) => {
     const x = ((lng - 10.80) / (11.00 - 10.80)) * 100;
@@ -75,8 +75,14 @@ export default function StationMap() {
         </div>
 
         {stations.map((station) => {
-          const statusConfig = getStatusConfig(station.status);
+          const shannon = station.shannon || 0;
+          const obsCount = station.obs_count || 0;
+          const statusConfig = getStatusConfig(shannon);
           const { x, y } = getPosition(station.lat, station.lon);
+          
+          // HEATMAP LOGIC:
+          // Size based on observation count (between 12px and 32px)
+          const size = Math.max(12, Math.min(32, 12 + (obsCount / 5)));
           
           return (
             <div
@@ -85,13 +91,16 @@ export default function StationMap() {
               style={{ left: x, top: y }}
               onClick={() => handleStationClick(station)}
             >
-              <div className={`w-6 h-6 rounded-full ${statusConfig.color} ring-4 ring-white dark:ring-gray-800 shadow-md transition-all duration-200 hover:scale-110`}>
-                {station.status === 'alto' && (
+              <div 
+                className={`rounded-full ${statusConfig.color} ring-4 ring-white dark:ring-gray-800 shadow-md transition-all duration-200 hover:scale-125`}
+                style={{ width: `${size}px`, height: `${size}px`, marginLeft: `-${size/2}px`, marginTop: `-${size/2}px` }}
+              >
+                {shannon >= 2.0 && (
                   <div className="absolute inset-0 rounded-full ring-2 ring-white dark:ring-gray-800 animate-pulse opacity-50" />
                 )}
               </div>
               
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 opacity-0 group-hover:opacity-100 transition-opacity w-64">
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 opacity-0 group-hover:opacity-100 transition-opacity w-64 z-10">
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 p-4 space-y-3 transition-colors">
                   <div className="flex justify-between items-start">
                     <div>
@@ -106,26 +115,16 @@ export default function StationMap() {
                   <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
                     <div className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
                       <div className="flex justify-between">
+                        <span>Osservazioni:</span>
+                        <span className="font-medium">{obsCount}</span>
+                      </div>
+                      <div className="flex justify-between">
                         <span>Indice Shannon:</span>
-                        <span className="font-medium">{station.index.toFixed(2)}</span>
+                        <span className="font-medium">{shannon.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Coordinate:</span>
                         <span className="font-mono">{station.lat.toFixed(4)}°N, {station.lon.toFixed(4)}°E</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Ultimo aggiornamento:</span>
-                        <span className="text-sm">
-                          {station.last_updated ? 
-                            new Date(station.last_updated).toLocaleString('it-IT', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            }) : 
-                            'Dati non disponibili'}
-                        </span>
                       </div>
                     </div>
                   </div>
@@ -159,7 +158,7 @@ export default function StationMap() {
         </div>
         <div className="border-t border-gray-200 dark:border-gray-600 pt-2">
           <div className="flex justify-between">
-            <span>Marker size indicates data quality</span>
+            <span>Dimensione cerchio: numero osservazioni</span>
             <span className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-primary/20" />
               <span>Stazione attiva</span>

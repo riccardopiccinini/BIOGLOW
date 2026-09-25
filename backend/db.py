@@ -7,7 +7,7 @@ from biodiversity import shannon_index
 
 supabase = create_client(config.SUPABASE_URL, config.SUPABASE_KEY)
 
-async def get_observations(station_id=None, method=None, start=None, end=None, limit=10, order="-date_time"):
+async def get_observations(station_id=None, method=None, start=None, end=None, limit=10, order="-date_//time"):
     query = supabase.table("osservazioni").select("*")
 
     if station_id:
@@ -35,7 +35,6 @@ async def get_observation_by_id(obs_id: str):
 
 async def update_observation_status(obs_id: str, status: str):
     res = supabase.table("osservazioni").update({"verification_status": status}).eq("id", obs_id).execute()
-    # Ritorna il dato aggiornato se presente, altrimenti un semplice conferma per evitare il 404 in main.py
     if res.data and len(res.data) > 0:
         return res.data[0]
     return {"id": obs_id, "verification_status": status, "updated": True}
@@ -71,18 +70,22 @@ async def save_observation(observation: dict):
     res = supabase.table("osservazioni").insert(observation).execute()
     return res
 
-
 async def get_stations():
-    """Recupera la lista delle stazioni dalla tabella Supabase."""
+    """Recupera la lista delle stazioni e il numero di osservazioni per ciascuna."""
     try:
-        res = supabase.table("stations").select("*").execute()
-        return res.data if res.data else []
+        res_stations = supabase.table("stations").select("*").execute()
+        stations = res_stations.data if res_stations.data else []
+        
+        for s in stations:
+            res_obs = supabase.table("osservazioni").select("id", count="exact").eq("station_id", s["id"]).execute()
+            s["obs_count"] = res_obs.count if hasattr(res_obs, "count") else 0
+            
+        return stations
     except Exception as e:
-        print(f"Error fetching stations from DB: {e}")
+        print(f"Error fetching stations with counts: {e}")
         return []
 
 async def get_station_detail(station_id: str):
-    """Recupera dettagli di una stazione dal DB."""
     res_station = supabase.table("stations").select("*").eq("id", station_id).single().execute()
     station_info = res_station.data
     if not station_info:
@@ -114,3 +117,7 @@ async def get_station_detail(station_id: str):
         "species": species_list,
         "latest_observations": latest_obs
     }
+
+async def station_exists(station_id: str) -> bool:
+    res = supabase.table("stations").select("id").eq("id", station_id).execute()
+    return len(res.data) > 0 if res.data else False

@@ -10,7 +10,17 @@ from supabase import create_client
 
 # Imports from local modules
 from config import config
-from db import supabase, get_observations as db_get_observations, get_observation_by_id, update_observation_status, get_stats, get_alerts, get_stations, get_station_detail
+from db import (
+    supabase, 
+    get_observations as db_get_observations, 
+    get_observation_by_id, 
+    update_observation_status, 
+    get_stats, 
+    get_alerts, 
+    get_stations, 
+    get_station_detail,
+    station_exists
+)
 from biodiversity import compute_shannon_time_series, compute_shannon_time_series_detail, shannon_index
 from alerts import check_and_create_alert
 from pipeline import identify_image, identify_audio, upload_to_storage
@@ -28,16 +38,11 @@ app.add_middleware(
 )
 
 async def verify_token(authorization: Optional[str] = Header(None)):
-    """
-    Verifica che l'utente sia autenticato tramite Supabase.
-    Il token deve essere passato nell'header Authorization come 'Bearer <token>'
-    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token di autenticazione mancante o non valido")
     
     token = authorization.split(" ")[1]
     try:
-        # Utilizziamo Supabase per verificare l'utente tramite il JWT
         user = supabase.auth.get_user(token)
         if not user:
             raise HTTPException(status_code=401, detail="Utente non autenticato")
@@ -129,9 +134,6 @@ async def get_observation(id: str):
 
 @app.patch("/observations/{id}")
 async def update_observation(id: str, data: dict, user=Depends(verify_token)):
-    """
-    Protegiamo l'aggiornamento dello stato: solo utenti autenticati possono validare.
-    """
     if "verification_status" not in data:
         raise HTTPException(status_code=400, detail="Solo verification_status può essere aggiornato")
 
@@ -165,6 +167,9 @@ async def receive_observation(
     station_id: Optional[str] = "SECCHIA-01",
     date_time: Optional[str] = None
 ):
+    if not await station_exists(station_id):
+        raise HTTPException(status_code=400, detail=f"Stazione {station_id} non valida o non censita")
+
     tmp_path = Path(f"/tmp/{file.filename}")
     with open(tmp_path, "wb") as f:
         f.write(await file.read())
@@ -186,8 +191,6 @@ async def receive_observation(
         verification_status = "pending"
     else:
         verification_status = "excluded"
-
-    print(f"DEBUG: Obs {result['species']} | Conf: {confidence} | Status: {verification_status}")
 
     observation = {
         "species": result["species"],
