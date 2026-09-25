@@ -36,6 +36,11 @@ export default function SpeciesIndex() {
             if (speciesRef.rare?.includes(species)) category = "rare";
             else if (speciesRef.protected?.includes(species)) category = "protected";
             else if (speciesRef.invasive?.includes(species)) category = "invasive";
+            // Filter to show only protected and invasive species (hide rare and normal)
+            if (category === "rare" || category === "normal") {
+                return null;
+            }
+
 
             // REMOVED: filter that was hiding normal and rare species
             const cat = SPECIES_CATEGORIES[category] || SPECIES_CATEGORIES.normal;
