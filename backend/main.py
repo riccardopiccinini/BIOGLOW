@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 import os
 from pathlib import Path
+from datetime import datetime, timezone
 from supabase import create_client
 
 # Imports from local modules
@@ -168,7 +169,7 @@ async def receive_observation(
         "station_id": station_id,
         "confidence": result["confidence"],
         "verification_status": verification_status,
-        "date_time": "2026-09-23T12:00:00Z" # Simplified, should be current time
+        "date_time": datetime.now(timezone.utc).isoformat()
     }
 
     from db import save_observation
