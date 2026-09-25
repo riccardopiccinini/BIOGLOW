@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import useSWR from "swr";
 import { useRouter } from "next/router";
 import Layout from "../../components/Layout";
@@ -18,7 +18,6 @@ export default function SpeciesDetail() {
 
   // Sync filters with query params on mount and on route change
   useEffect(() => {
-    // Don't override the species filter from URL
     const { station, method, startDate, endDate } = router.query;
     setFilters(prev => ({
       ...prev,
@@ -61,14 +60,6 @@ export default function SpeciesDetail() {
 
   // Filter observations by species first (since we're on a species page)
   const speciesObservations = allObservations.filter(obs => obs.species === species);
-
-  // Apply additional filters
-  const filteredObs = speciesObservations.filter(obs => {
-    // If we have SWR data, we'd apply filters there, but since we're using client-side filtering
-    // for simplicity in this example, we'll do it here
-    // In a real app, we'd pass filters to the SWR fetcher
-    return true; // Actual filtering happens in ObservationList via the filters prop
-  });
 
   return (
     <Layout>
