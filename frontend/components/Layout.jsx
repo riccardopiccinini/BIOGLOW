@@ -1,28 +1,56 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { LuSun, LuMoon } from "react-icons/lu";
 
 export default function Layout({ children }) {
-  const [darkMode, setDarkMode] = useState(false);
+  // Initialize state based on system preference and saved theme (sync to avoid flash)
+  const getInitialMode = () => {
+    if (typeof window === "undefined") return false; // SSR: default to light
+    const saved = localStorage.getItem("theme");
+    if (saved) return saved === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  };
+
+  const [darkMode, setDarkMode] = useState(getInitialMode);
+  const initializedRef = useRef(false); // To prevent duplicate initialization
 
   useEffect(() => {
-    // Check system preference or saved setting
-    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches || localStorage.getItem("theme") === "dark";
-    setDarkMode(isDark);
-    if (isDark) {
-      document.documentElement.classList.add("dark");
+    // Set the initial theme class on documentElement to prevent flash
+    if (!initializedRef.current) {
+      if (darkMode) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+      initializedRef.current = true;
     }
-  }, []);
 
-  const toggleDarkMode = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    if (newMode) {
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (e) => {
+      // Only update if user hasn't explicitly set a preference (i.e., no localStorage theme)
+      if (!localStorage.getItem("theme")) {
+        setDarkMode(e.matches);
+      }
+    };
+    mediaQuery.addEventListener("change", handleChange);
+
+    // Update theme class and localStorage when darkMode state changes
+    if (darkMode) {
       document.documentElement.classList.add("dark");
       localStorage.setItem("theme", "dark");
     } else {
       document.documentElement.classList.remove("dark");
       localStorage.setItem("theme", "light");
     }
+
+    // Cleanup
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+    };
+  }, [darkMode]); // Re-run effect when darkMode changes
+
+  const toggleDarkMode = () => {
+    setDarkMode((prevMode) => !prevMode);
   };
 
   return (
