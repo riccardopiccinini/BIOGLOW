@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import useSWR from "swr";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 import { useRouter } from "next/router";
