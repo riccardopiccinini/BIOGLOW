@@ -9,8 +9,6 @@ export default function SpeciesDetail() {
   const router = useRouter();
   const { species } = router.query;
 
-  // Use the general observations endpoint with a species filter if possible, 
-  // or filter client-side since the API doesn't have a dedicated species filter.
   const { data: observations, error } = useSWR(
     "/observations?limit=1000", 
     fetcher
@@ -20,7 +18,6 @@ export default function SpeciesDetail() {
   if (error) return <Layout><div className="p-8 text-red-500">Errore nel caricamento dei dati</div></Layout>;
   if (!observations) return <Layout><div className="p-8">Caricamento...</div></Layout>;
 
-  // Filter observations for this specific species
   const filteredObs = observations.filter(obs => obs.species === species);
 
   return (
@@ -45,8 +42,8 @@ export default function SpeciesDetail() {
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
             <h2 className="text-xl font-bold text-primary mb-4">Galleria Prove</h2>
             <ObservationList 
-              filters={{ species: species }} // This might need a backend update to support 'species' filter
-              data={filteredObs} // Pass filtered data directly to avoid redundant API calls
+              filters={{ species: species }}
+              data={filteredObs}
             />
           </div>
         </div>

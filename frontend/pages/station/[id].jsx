@@ -13,7 +13,7 @@ export default function StationDetail() {
   const { id } = router.query;
 
   const { data: stats, error } = useSWR(
-    id ? \`/observations/stats?station_id=\${id}\` : null,
+    id ? `/observations/stats?station_id=${id}` : null,
     fetcher
   );
 

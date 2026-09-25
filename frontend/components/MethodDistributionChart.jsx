@@ -16,7 +16,7 @@ export default function MethodDistributionChart({ filters }) {
   params.append("limit", "1000");
 
   const { data, error } = useSWR(
-    \`/observations?\${params.toString()}\`,
+    `/observations?${params.toString()}`,
     fetcher
   );
 
@@ -49,7 +49,7 @@ export default function MethodDistributionChart({ filters }) {
             dataKey="value"
           >
             {chartData.map((entry, index) => (
-              <Cell key={\`cell-\${index}\`} fill={entry.color} />
+              <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Pie>
           <Tooltip
@@ -61,7 +61,7 @@ export default function MethodDistributionChart({ filters }) {
               return (
                 <div
                   className="flex flex-col items-start gap-2"
-                  onClick={() => router.push(\`/observations?method=\${method}\`)}
+                  onClick={() => router.push(`/observations?method=${method}`)}
                   style={{ cursor: "pointer", userSelect: "none" }}
                 >
                   <div className="font-medium">{name}</div>

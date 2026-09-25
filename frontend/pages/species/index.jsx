@@ -4,7 +4,6 @@ import Layout from "../../components/Layout";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
-// Mapping of species to categories as requested
 const SPECIES_CATEGORIES = {
   "Lontra europea": { type: "protetta", label: "Da Proteggere", color: "bg-blue-100 text-blue-800" },
   "Cinghiale": { type: "normale", label: "Normale", color: "bg-gray-100 text-gray-800" },
@@ -18,7 +17,6 @@ export default function SpeciesIndex() {
   if (error) return <Layout><div className="p-8 text-red-500">Errore nel caricamento delle specie</div></Layout>;
   if (!data) return <Layout><div className="p-8">Caricamento...</div></Layout>;
 
-  // Extract distinct species from all observations
   const distinctSpecies = [...new Set(data.map(obs => obs.species))].filter(Boolean);
 
   return (
@@ -42,12 +40,12 @@ export default function SpeciesIndex() {
             return (
               <div 
                 key={species}
-                onClick={() => router.push(\`/species/\${encodeURIComponent(species)}\`)}
+                onClick={() => router.push(`/species/${encodeURIComponent(species)}`)}
                 className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:border-primary cursor-pointer transition-all hover:shadow-md group"
               >
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-xl font-bold text-gray-900 group-hover:text-primary transition">{species}</h3>
-                  <span className={\`px-3 py-1 rounded-full text-xs font-bold \${cat.color}\`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${cat.color}`}>
                     {cat.label}
                   </span>
                 </div>
