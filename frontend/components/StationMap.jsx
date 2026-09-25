@@ -34,9 +34,16 @@ export default function StationMap() {
     return STATION_STATUS.basso;
   };
 
-  const getPosition = (lat, lng) => {
-    const x = ((lng - 10.80) / (11.00 - 10.80)) * 100;
-    const y = ((44.80 - lat) / (44.95 - 44.80)) * 100;
+  const getPosition = (lat, lng, bounds) => {
+    const { minLat, maxLat, minLng, maxLng } = bounds;
+    
+    // Evita divisione per zero se tutte le stazioni sono nello stesso punto
+    const latRange = maxLat - minLat || 0.01;
+    const lngRange = maxLng - minLng || 0.01;
+
+    const x = ((lng - minLng) / lngRange) * 100;
+    const y = ((maxLat - lat) / latRange) * 100;
+    
     return { x: `${x}%`, y: `${y}%` };
   };
 
@@ -66,6 +73,16 @@ export default function StationMap() {
     );
   }
 
+  // CALCOLO BOUNDS DINAMICI
+  const bounds = stations.length > 0 
+    ? {
+        minLat: Math.min(...stations.map(s => s.lat)),
+        maxLat: Math.max(...stations.map(s => s.lat)),
+        minLng: Math.min(...stations.map(s => s.lon)),
+        maxLng: Math.max(...stations.map(s => s.lon)),
+      }
+    : { minLat: 0, maxLat: 1, minLng: 0, maxLng: 1 };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 transition-colors">
       <h2 className="text-lg font-semibold mb-4 text-primary dark:text-blue-400">Mappa Biodiversità Stazioni</h2>
@@ -78,10 +95,8 @@ export default function StationMap() {
           const shannon = station.shannon || 0;
           const obsCount = station.obs_count || 0;
           const statusConfig = getStatusConfig(shannon);
-          const { x, y } = getPosition(station.lat, station.lon);
+          const { x, y } = getPosition(station.lat, station.lon, bounds);
           
-          // HEATMAP LOGIC:
-          // Size based on observation count (between 12px and 32px)
           const size = Math.max(12, Math.min(32, 12 + (obsCount / 5)));
           
           return (
