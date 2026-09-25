@@ -37,17 +37,14 @@ export default function StationMap() {
   const getStatusConfig = (status) => STATION_STATUS[status] || STATION_STATUS.basso;
 
   // Convert lat/lng to x/y percentages for positioning on the map
-  // Assuming a fixed map area for simplicity
   const getPosition = (lat, lng) => {
-    // These values would need to be calibrated to the actual map image
-    // For demo purposes, using a simple linear transformation
-    const x = ((lng - 10.80) / (11.00 - 10.80)) * 100; // Longitude range
-    const y = ((44.80 - lat) / (44.95 - 44.80)) * 100; // Latitude range (reversed because y increases downward)
+    const x = ((lng - 10.80) / (11.00 - 10.80)) * 100;
+    const y = ((44.80 - lat) / (44.95 - 44.80)) * 100;
     return { x: `${x}%`, y: `${y}%` };
   };
 
   const handleStationClick = (station) => {
-    router.push(`/stations/${station.id}`);
+    router.push(`/station/${station.id}`);
   };
 
   if (loading) {
@@ -76,7 +73,6 @@ export default function StationMap() {
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
       <h2 className="text-lg font-semibold mb-4 text-primary">Mappa Biodiversità Stazioni</h2>
       <div className="relative w-full h-96 bg-blue-50 rounded-xl border-2 border-dashed border-blue-200 overflow-hidden">
-        {/* Map background image would go here in a real implementation */}
         <div className="absolute inset-0 flex items-center justify-center opacity-10">
           <span className="text-blue-400 font-bold text-xl uppercase tracking-widest">Mappa Area Secchia</span>
         </div>
@@ -92,15 +88,12 @@ export default function StationMap() {
               style={{ left: x, top: y }}
               onClick={() => handleStationClick(station)}
             >
-              {/* Station marker */}
               <div className={`w-6 h-6 rounded-full ${statusConfig.color} ring-4 ring-white shadow-md transition-all duration-200 hover:scale-110`}>
-                {/* Optional: add a pulsating effect for active stations */}
                 {station.status === 'alto' && (
                   <div className="absolute inset-0 rounded-full ring-2 ring-white animate-pulse opacity-50" />
                 )}
               </div>
               
-              {/* Tooltip / Popup */}
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 opacity-0 group-hover:opacity-100 transition-opacity w-64">
                 <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-4 space-y-3">
                   <div className="flex justify-between items-start">
@@ -139,10 +132,7 @@ export default function StationMap() {
                       </div>
                     </div>
                   </div>
-                  </div>
-                  </div>
                   
-                  {/* Action button */}
                   <div className="mt-3">
                     <button
                       onClick={() => handleStationClick(station)}
@@ -158,7 +148,6 @@ export default function StationMap() {
         })}
       </div>
       
-      {/* Legend with enhanced information */}
       <div className="mt-4 flex flex-col space-y-3 text-xs text-muted">
         <div className="flex items-center gap-3 font-medium text-gray-600">
           Legenda:
