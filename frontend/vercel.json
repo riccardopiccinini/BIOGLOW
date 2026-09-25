@@ -7,6 +7,10 @@
     {
       "source": "/alerts/:path*",
       "destination": "https://monitor-secchia-backend.onrender.com/alerts/:path*"
+    },
+    {
+      "source": "/reports/:path*",
+      "destination": "https://monitor-secchia-backend.onrender.com/reports/:path*"
     }
   ]
 }

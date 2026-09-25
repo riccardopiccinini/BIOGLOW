@@ -52,7 +52,6 @@ export default function Home() {
       if (!response || !Array.isArray(response)) {
         throw new Error("Nessun dato disponibile per l'esportazione");
       }
-
       const csvContent = convertToCSV(response);
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -68,6 +67,17 @@ export default function Home() {
       console.error("Export error:", error);
       alert(`Errore durante l'esportazione: ${error.message}`);
     }
+  };
+
+  const downloadPDF = () => {
+    // Costruiamo l'URL per il report. Passiamo solo la stazione se è selezionata.
+    const stationId = filters.station;
+    const url = stationId 
+      ? `/reports/summary?station_id=${stationId}` 
+      : `/reports/summary`;
+    
+    // Apriamo l'URL in una nuova scheda per far partire il download del PDF
+    window.open(url, "_blank");
   };
 
   const convertToCSV = (objArray) => {
@@ -134,13 +144,20 @@ export default function Home() {
               </p>
             </div>
             
-            <div className="mt-4">
+            <div className="mt-4 space-y-3">
               <button
                 onClick={exportToCSV}
                 className="w-full bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition flex items-center justify-center gap-2"
               >
                 <span className="w-4 h-4">📥</span>
                 Esporta dati (CSV)
+              </button>
+              <button
+                onClick={downloadPDF}
+                className="w-full bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition flex items-center justify-center gap-2"
+              >
+                <span className="w-4 h-4">📄</span>
+                Scarica Report (PDF)
               </button>
             </div>
           </div>
