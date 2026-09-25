@@ -4,6 +4,7 @@ import Layout from "../../components/Layout";
 import { LuArrowLeft, LuCircleCheck, LuCircleX, LuClock, LuMusic, LuImage } from "react-icons/lu";
 import { fetcher, ErrorDisplay, LoadingDisplay, formatDate, formatConfidence } from "../../lib/utils";
 import { VERIFICATION_STATUS, OBSERVATION_METHODS } from "../../lib/constants";
+import { supabase } from "../../lib/supabase";
 
 export default function ObservationDetail() {
   const router = useRouter();
@@ -16,14 +17,32 @@ export default function ObservationDetail() {
 
   const updateStatus = async (newStatus) => {
     try {
-      await fetch(`/observations/${id}`, {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        alert("Devi effettuare l'accesso per modificare lo stato");
+        router.push("/login");
+        return;
+      }
+
+      const response = await fetch(`/observations/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
         body: JSON.stringify({ verification_status: newStatus }),
       });
-      mutate(); // Ricarica i dati
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Errore durante l'aggiornamento");
+      }
+
+      mutate();
     } catch (e) {
-      alert("Errore durante l'aggiornamento dello stato");
+      alert(e.message || "Errore durante l'aggiornamento dello stato");
     }
   };
 
@@ -48,7 +67,6 @@ export default function ObservationDetail() {
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Sezione Multimediale */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
           <div className="aspect-video bg-gray-100 flex items-center justify-center relative">
             {obs.method === "image" && obs.media_url ? (
@@ -76,7 +94,6 @@ export default function ObservationDetail() {
           </div>
         </div>
 
-        {/* Sezione Dettagli e Controllo */}
         <div className="space-y-6">
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
             <h2 className="text-xl font-semibold mb-6 text-primary">Analisi IA</h2>
@@ -90,7 +107,7 @@ export default function ObservationDetail() {
                 <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                   <div
                     className="bg-success h-full transition-all duration-500"
-                    style={{ width: `${(obs.confidence ?? 0) * 100}%` }}
+                    style={{ width: f"{(obs.confidence ?? 0) * 100}%" }}
                   />
                 </div>
               </div>
@@ -123,7 +140,7 @@ export default function ObservationDetail() {
                   onClick={() => updateStatus(key)}
                   className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
                     obs.verification_status === key
-                    ? `border-${config.color.split('-')[1]} shadow-inner ${config.color} text-white`
+                    ? f"border-{config.color.split('-')[1]} shadow-inner {config.color} text-white"
                     : "border-gray-100 hover:border-primary text-gray-600 hover:bg-gray-50"
                   }`}
                 >
