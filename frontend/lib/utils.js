@@ -6,17 +6,79 @@
 import { format } from "date-fns";
 
 /**
- * Standard fetcher for SWR - handles errors consistently
+ * Enhanced fetcher with standardized error handling
+ * @param {string} url - URL to fetch
+ * @param {Object} options - Fetch options
+ * @returns {Promise<any>} - Parsed JSON response
  */
-export const fetcher = (url) => fetch(url).then((r) => {
-  if (!r.ok) throw new Error("API error");
-  return r.json();
-});
+export const fetcher = async (url, options = {}) => {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+      },
+      ...options
+    });
+
+    if (!response.ok) {
+      // Create standardized error based on status code
+      const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
+      error.status = response.status;
+      error.statusText = response.statusText;
+      
+      // Try to get error message from response body
+      try {
+        const errorData = await response.json();
+        if (errorData.message) {
+          error.message = errorData.message;
+        } else if (errorData.error) {
+          error.message = errorData.error;
+        }
+      } catch (e) {
+        // If we can't parse JSON, use text
+        const errorText = await response.text();
+        if (errorText) {
+          error.message = errorText;
+        }
+      }
+      
+      throw error;
+    }
+
+    // Handle empty responses
+    if (response.status === 204) {
+      return null;
+    }
+
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      return await response.json();
+    } else {
+      return await response.text();
+    }
+  } catch (error) {
+    // Log error for debugging (in production, you might want to send to error tracking service)
+    console.error(`API Error [${url}]:`, error);
+    throw error;
+  }
+};
 
 /**
  * JSON-only fetcher (no error throwing on non-ok)
+ * @param {string} url - URL to fetch
+ * @returns {Promise<any>} - Response data or null on error
  */
-export const jsonFetcher = (url) => fetch(url).then((r) => r.json());
+export const jsonFetcher = async (url) => {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error(`JSON Fetch Error [${url}]:`, error);
+    return null;
+  }
+};
 
 /**
  * Build filter query parameters from filter object

@@ -46,6 +46,64 @@ export default function Home() {
     );
   };
 
+  // Function to export data as CSV
+  const exportToCSV = async () => {
+    try {
+      // Fetch observations data with current filters
+      const params = buildFilterParams(filters, { limit: "10000" }); // Higher limit for export
+      const response = await fetcher(`/observations?${params.toString()}`);
+      
+      if (!response || !Array.isArray(response)) {
+        throw new Error("Nessun dato disponibile per l'esportazione");
+      }
+
+      // Convert to CSV
+      const csvContent = convertToCSV(response);
+      
+      // Create download link
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/[:]/g, "-");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `biodiversita_report_${timestamp}.csv`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Export error:", error);
+      alert(`Errore durante l'esportazione: ${error.message}`);
+    }
+  };
+
+  // Convert array of objects to CSV string
+  const convertToCSV = (objArray) => {
+    if (!objArray || !Array.isArray(objArray) || objArray.length === 0) {
+      return "";
+    }
+
+    // Get all unique keys from all objects
+    const keys = [...new Set(objArray.flatMap(Object.keys))];
+    
+    // Create header
+    const header = keys.map(key => `"${key}"`).join(",");
+    
+    // Create rows
+    const rows = objArray.map(obj => {
+      return keys.map(key => {
+        const value = obj[key];
+        // Handle different value types
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'string') return `"${value.replace(/"/g, '""')}"`;
+        if (typeof value === 'object') return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
+        return `"${value}"`;
+      }).join(",");
+    });
+    
+    return [header, ...rows].join("\n");
+  };
+
   const { data: stats, error: statsError } = useSWR(
     "/observations/stats",
     fetcher,
@@ -90,6 +148,17 @@ export default function Home() {
               <p className="text-xs text-blue-700 leading-relaxed">
                 I filtri aggiornano automaticamente tutti i grafici e le liste della dashboard.
               </p>
+            </div>
+            
+            {/* Export buttons */}
+            <div className="mt-4">
+              <button
+                onClick={exportToCSV}
+                className="w-full bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition flex items-center justify-center gap-2"
+              >
+                <span className="w-4 h-4">📥</span>
+                Esporta dati (CSV)
+              </button>
             </div>
           </div>
         </aside>

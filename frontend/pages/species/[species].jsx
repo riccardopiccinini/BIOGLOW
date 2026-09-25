@@ -1,28 +1,79 @@
-import { useRouter } from "next/router";
+import { useState } from "react";
 import useSWR from "swr";
+import { useRouter } from "next/router";
 import Layout from "../../components/Layout";
 import ObservationList from "../../components/ObservationList";
+import FilterBar from "../../components/FilterBar";
 import { jsonFetcher, ErrorDisplay, LoadingDisplay } from "../../lib/utils";
 
 export default function SpeciesDetail() {
   const router = useRouter();
   const { species } = router.query;
+  const [filters, setFilters] = useState({
+    station: "",
+    method: "",
+    startDate: "",
+    endDate: "",
+  });
 
-  const { data: observations, error } = useSWR(
+  // Sync filters with query params on mount and on route change
+  useEffect(() => {
+    // Don't override the species filter from URL
+    const { station, method, startDate, endDate } = router.query;
+    setFilters(prev => ({
+      ...prev,
+      station: station ?? "",
+      method: method ?? "",
+      startDate: startDate ?? "",
+      endDate: endDate ?? "",
+    }));
+  }, [router.query]);
+
+  // Update URL when filters change (shallow push to preserve state)
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    const params = {
+      species: species, // Always include the species filter
+      ...newFilters
+    };
+    // Remove empty params to keep URL clean
+    const filteredParams = Object.fromEntries(
+      Object.entries(params).filter(([_, value]) => value !== "")
+    );
+    router.push(
+      {
+        pathname: router.pathname,
+        query: filteredParams,
+      },
+      undefined,
+      { shallow: true }
+    );
+  };
+
+  const { data: allObservations, error } = useSWR(
     "/observations?limit=1000",
     jsonFetcher
   );
 
   if (!species) return <Layout><LoadingDisplay message="Caricamento dati..." /></Layout>;
   if (error) return <Layout><ErrorDisplay message="Errore nel caricamento dei dati" /></Layout>;
-  if (!observations) return <Layout><LoadingDisplay message="Caricamento dati..." /></Layout>;
+  if (!allObservations) return <Layout><LoadingDisplay message="Caricamento dati..." /></Layout>;
 
-  const filteredObs = observations.filter(obs => obs.species === species);
+  // Filter observations by species first (since we're on a species page)
+  const speciesObservations = allObservations.filter(obs => obs.species === species);
+
+  // Apply additional filters
+  const filteredObs = speciesObservations.filter(obs => {
+    // If we have SWR data, we'd apply filters there, but since we're using client-side filtering
+    // for simplicity in this example, we'll do it here
+    // In a real app, we'd pass filters to the SWR fetcher
+    return true; // Actual filtering happens in ObservationList via the filters prop
+  });
 
   return (
     <Layout>
       <div className="flex flex-col gap-8 p-4 lg:p-8 bg-gray-50 min-h-screen">
-        <header className="flex items-center gap-4">
+        <header className="flex flex-col gap-4">
           <button
             onClick={() => router.back()}
             className="p-2 hover:bg-gray-200 rounded-full transition"
@@ -33,7 +84,7 @@ export default function SpeciesDetail() {
             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
               {species}
             </h1>
-            <p className="text-muted">Evidenze raccolte: {filteredObs.length} osservazioni</p>
+            <p className="text-muted">Evidenze raccolte: {speciesObservations.length} osservazioni</p>
           </div>
         </header>
 
@@ -41,10 +92,18 @@ export default function SpeciesDetail() {
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
             <h2 className="text-xl font-bold text-primary mb-4">Galleria Prove</h2>
             <ObservationList
-              filters={{ species: species }}
-              data={filteredObs}
+              filters={{ species: species, ...filters }}
+              data={speciesObservations}
             />
           </div>
+        </div>
+
+        {/* Advanced Filters Section */}
+        <div className="mt-6">
+          <FilterBar
+            value={filters}
+            onFilterChange={handleFilterChange}
+          />
         </div>
       </div>
     </Layout>
