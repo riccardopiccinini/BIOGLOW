@@ -36,11 +36,9 @@ export default function StationMap() {
 
   const getPosition = (lat, lng, bounds) => {
     const { minLat, maxLat, minLng, maxLng } = bounds;
-    
     const latRange = maxLat - minLat || 0.01;
     const lngRange = maxLng - minLng || 0.01;
 
-    // Aggiungiamo un padding del 10% per evitare che i pallini tocchino i bordi
     const padding = 10; 
     const availableRange = 100 - (padding * 2);
 
@@ -88,8 +86,9 @@ export default function StationMap() {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 transition-colors">
       <h2 className="text-lg font-semibold mb-4 text-primary dark:text-blue-400">Mappa Biodiversità Stazioni</h2>
-      <div className="relative w-full h-96 bg-blue-50 dark:bg-gray-700 rounded-xl border-2 border-dashed border-blue-200 dark:border-gray-600 overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center opacity-10">
+      <div className="relative w-full h-96 bg-blue-50 dark:bg-gray-700 rounded-xl border-2 border-dashed border-blue-200 dark:border-gray-600">
+        {/* Background text - separate div to keep it centered and not interfere with tooltips */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
           <span className="text-blue-400 font-bold text-xl uppercase tracking-widest">Mappa Area Secchia</span>
         </div>
 
@@ -101,10 +100,13 @@ export default function StationMap() {
           
           const size = Math.max(12, Math.min(32, 12 + (obsCount / 5)));
           
+          // Dynamic tooltip position: if point is too high, show tooltip below
+          const isTooHigh = parseFloat(y) < 30;
+
           return (
             <div
               key={station.id}
-              className="absolute group cursor-pointer"
+              className="absolute group cursor-pointer z-10"
               style={{ left: x, top: y }}
               onClick={() => handleStationClick(station)}
             >
@@ -117,11 +119,11 @@ export default function StationMap() {
                 )}
               </div>
               
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 opacity-0 group-hover:opacity-100 transition-opacity w-64 z-10">
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 p-4 space-y-3 transition-colors">
+              <div className={`absolute left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity w-64 z-50 ${isTooHigh ? 'top-full mt-4' : 'bottom-full mb-4'}`}>
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 p-4 space-y-3 transition-colors">
                   <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">{station.name}</p>
+                    <div className="overflow-hidden">
+                      <p className="font-medium text-gray-900 dark:text-white truncate">{station.name}</p>
                       <p className="text-sm text-muted dark:text-gray-400">{station.id}</p>
                     </div>
                     <div className={`px-2 py-1 text-xs rounded-full ${statusConfig.color} bg-opacity-20`}>
