@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useRouter } from "next/router";
 import useSWR from "swr";
 import Layout from "../../components/Layout";
@@ -9,6 +10,7 @@ import { supabase } from "../../lib/supabase";
 export default function ObservationDetail() {
   const router = useRouter();
   const { id } = router.query;
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const { data: obs, error, mutate } = useSWR(
     id ? `/observations/${id}` : null,
@@ -16,6 +18,7 @@ export default function ObservationDetail() {
   );
 
   const updateStatus = async (newStatus) => {
+    setIsUpdating(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
@@ -40,9 +43,11 @@ export default function ObservationDetail() {
         throw new Error(errorData.detail || "Errore durante l'aggiornamento");
       }
 
-      mutate();
+      await mutate(); 
     } catch (e) {
       alert(e.message || "Errore durante l'aggiornamento dello stato");
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -137,12 +142,13 @@ export default function ObservationDetail() {
               {Object.entries(statusConfig).map(([key, config]) => (
                 <button
                   key={key}
+                  disabled={isUpdating}
                   onClick={() => updateStatus(key)}
                   className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
                     obs.verification_status === key
                     ? `border-${config.color.split('-')[1]} shadow-inner ${config.color} text-white`
                     : "border-gray-100 hover:border-primary text-gray-600 hover:bg-gray-50"
-                  }`}
+                  } ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   <div className="text-2xl mb-1">{config.icon}</div>
                   <span className="text-xs font-medium">{config.label}</span>
