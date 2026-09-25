@@ -139,6 +139,8 @@ export default function StationMap() {
                       </div>
                     </div>
                   </div>
+                  </div>
+                  </div>
                   
                   {/* Action button */}
                   <div className="mt-3">
