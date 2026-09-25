@@ -1,8 +1,9 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Header, Depends
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 import os
+import io
 from pathlib import Path
 from datetime import datetime, timezone
 from supabase import create_client
@@ -14,6 +15,7 @@ from biodiversity import compute_shannon_time_series, compute_shannon_time_serie
 from alerts import check_and_create_alert
 from pipeline import identify_image, identify_audio, upload_to_storage
 from constants import CONFIDENCE_THRESHOLDS
+from reports import generate_summary_pdf
 
 app = FastAPI()
 
@@ -206,3 +208,15 @@ async def receive_observation(
         return JSONResponse(content={"observation_id": obs_id, "species": result["species"], "confidence": confidence})
 
     raise HTTPException(status_code=500, detail="Errore nel salvataggio dell'osservazione")
+
+@app.get("/reports/summary")
+async def get_summary_report(station_id: Optional[str] = None):
+    try:
+        pdf_bytes = await generate_summary_pdf(station_id)
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=biodiversity_report{'_'+station_id if station_id else ''}.pdf"}
+        )
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
