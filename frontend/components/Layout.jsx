@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { LuSun, LuMoon, LuLogOut, LuUser } from "react-icons/lu";
+import { LuSun, LuMoon, LuLogOut, LuUser, LuLogIn } from "react-icons/lu";
 import { useRouter } from "next/router";
+import Link from "next/link";
 import { supabase } from "../lib/supabase";
 
 export default function Layout({ children }) {
@@ -87,6 +88,12 @@ export default function Layout({ children }) {
               <LuLogOut className="w-4 h-4" />
             </button>
           </div>
+        )}
+        {!user && !loadingAuth && (
+          <Link href="/login" className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-dark transition-colors px-3 py-1 rounded-lg hover:bg-primary/10">
+            <LuLogIn className="w-4 h-4" />
+            <span>Accedi</span>
+          </Link>
         )}
         <button
           onClick={toggleDarkMode}
