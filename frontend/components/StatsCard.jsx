@@ -1,6 +1,9 @@
 import { LuClock, LuLeaf, LuUsers } from "react-icons/lu";
+import { useRouter } from "next/router";
 
 export default function StatsCard({ totalObservations, speciesCount, shannonIndex }) {
+  const router = useRouter();
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
       {/* Totale osservazioni */}
@@ -12,8 +15,11 @@ export default function StatsCard({ totalObservations, speciesCount, shannonInde
         <p className="text-3xl font-bold text-gray-900">{totalObservations}</p>
       </div>
 
-      {/* Specie distinte */}
-      <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-success">
+      {/* Specie distinte - CLICKABLE */}
+      <div 
+        className="bg-white rounded-lg shadow-md p-5 border-l-4 border-success cursor-pointer hover:bg-gray-50 transition"
+        onClick={() => router.push("/species")}
+      >
         <div className="flex items-center gap-2 mb-1">
           <LuLeaf className="text-success h-5 w-5" />
           <span className="text-sm font-medium text-muted">Specie distinte</span>

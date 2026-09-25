@@ -20,14 +20,14 @@ export default function StationMap() {
   };
 
   const handleStationClick = (id) => {
-    router.push(`/stations/${id}`);
+    // Fixed path: /station/ instead of /stations/ to match the folder structure
+    router.push(`/station/${id}`);
   };
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
       <h2 className="text-lg font-semibold mb-4 text-primary">Mappa Biodiversità Stazioni</h2>
       <div className="relative w-full h-64 bg-blue-50 rounded-xl border-2 border-dashed border-blue-200 overflow-hidden">
-        {/* Placeholder per la mappa */}
         <div className="absolute inset-0 flex items-center justify-center opacity-20">
           <span className="text-blue-400 font-bold text-xl uppercase tracking-widest">Mappa Area Secchia</span>
         </div>

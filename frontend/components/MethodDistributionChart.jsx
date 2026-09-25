@@ -61,7 +61,7 @@ export default function MethodDistributionChart({ filters }) {
               return (
                 <div
                   className="flex flex-col items-start gap-2"
-                  onClick={() => router.push(`/observations?method=${method}`)}
+                  onClick={() => router.push(`/?method=${method}`)}
                   style={{ cursor: "pointer", userSelect: "none" }}
                 >
                   <div className="font-medium">{name}</div>
