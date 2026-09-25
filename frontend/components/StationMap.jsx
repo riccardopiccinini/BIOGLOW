@@ -9,7 +9,6 @@ export default function StationMap() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch real station data from API
   useEffect(() => {
     setLoading(true);
     setError(null);
@@ -24,7 +23,6 @@ export default function StationMap() {
       })
       .catch((err) => {
         console.error("Failed to load stations:", err);
-        // Fallback to simulated data if API fails
         setStations([
           { id: 'SECCHIA-01', name: 'Stazione Nord', index: 2.45, status: 'alto', lat: 44.92, lon: 10.92 },
           { id: 'SECCHIA-02', name: 'Stazione Centro', index: 1.82, status: 'medio', lat: 44.90, lon: 10.90 },
@@ -36,7 +34,6 @@ export default function StationMap() {
 
   const getStatusConfig = (status) => STATION_STATUS[status] || STATION_STATUS.basso;
 
-  // Convert lat/lng to x/y percentages for positioning on the map
   const getPosition = (lat, lng) => {
     const x = ((lng - 10.80) / (11.00 - 10.80)) * 100;
     const y = ((44.80 - lat) / (44.95 - 44.80)) * 100;
@@ -49,9 +46,9 @@ export default function StationMap() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-lg font-semibold mb-4 text-primary">Mappa Biodiversità Stazioni</h2>
-        <div className="flex items-center justify-center h-64 text-gray-500">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 transition-colors">
+        <h2 className="text-lg font-semibold mb-4 text-primary dark:text-blue-400">Mappa Biodiversità Stazioni</h2>
+        <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
           Caricamento mappa...
         </div>
       </div>
@@ -60,8 +57,8 @@ export default function StationMap() {
 
   if (error && stations.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-lg font-semibold mb-4 text-primary">Mappa Biodiversità Stazioni</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 transition-colors">
+        <h2 className="text-lg font-semibold mb-4 text-primary dark:text-blue-400">Mappa Biodiversità Stazioni</h2>
         <div className="flex items-center justify-center h-64 text-red-500">
           Errore nel caricamento della mappa
         </div>
@@ -70,9 +67,9 @@ export default function StationMap() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-      <h2 className="text-lg font-semibold mb-4 text-primary">Mappa Biodiversità Stazioni</h2>
-      <div className="relative w-full h-96 bg-blue-50 rounded-xl border-2 border-dashed border-blue-200 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 transition-colors">
+      <h2 className="text-lg font-semibold mb-4 text-primary dark:text-blue-400">Mappa Biodiversità Stazioni</h2>
+      <div className="relative w-full h-96 bg-blue-50 dark:bg-gray-700 rounded-xl border-2 border-dashed border-blue-200 dark:border-gray-600 overflow-hidden">
         <div className="absolute inset-0 flex items-center justify-center opacity-10">
           <span className="text-blue-400 font-bold text-xl uppercase tracking-widest">Mappa Area Secchia</span>
         </div>
@@ -88,26 +85,26 @@ export default function StationMap() {
               style={{ left: x, top: y }}
               onClick={() => handleStationClick(station)}
             >
-              <div className={`w-6 h-6 rounded-full ${statusConfig.color} ring-4 ring-white shadow-md transition-all duration-200 hover:scale-110`}>
+              <div className={`w-6 h-6 rounded-full ${statusConfig.color} ring-4 ring-white dark:ring-gray-800 shadow-md transition-all duration-200 hover:scale-110`}>
                 {station.status === 'alto' && (
-                  <div className="absolute inset-0 rounded-full ring-2 ring-white animate-pulse opacity-50" />
+                  <div className="absolute inset-0 rounded-full ring-2 ring-white dark:ring-gray-800 animate-pulse opacity-50" />
                 )}
               </div>
               
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 opacity-0 group-hover:opacity-100 transition-opacity w-64">
-                <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-4 space-y-3">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 p-4 space-y-3 transition-colors">
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="font-medium text-gray-900">{station.name}</p>
-                      <p className="text-sm text-muted">{station.id}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{station.name}</p>
+                      <p className="text-sm text-muted dark:text-gray-400">{station.id}</p>
                     </div>
                     <div className={`px-2 py-1 text-xs rounded-full ${statusConfig.color} bg-opacity-20`}>
                       {statusConfig.label}
                     </div>
                   </div>
                   
-                  <div className="border-t border-gray-200 pt-3">
-                    <div className="text-sm text-gray-600 space-y-1">
+                  <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                    <div className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
                       <div className="flex justify-between">
                         <span>Indice Shannon:</span>
                         <span className="font-medium">{station.index.toFixed(2)}</span>
@@ -148,8 +145,8 @@ export default function StationMap() {
         })}
       </div>
       
-      <div className="mt-4 flex flex-col space-y-3 text-xs text-muted">
-        <div className="flex items-center gap-3 font-medium text-gray-600">
+      <div className="mt-4 flex flex-col space-y-3 text-xs text-muted dark:text-gray-400">
+        <div className="flex items-center gap-3 font-medium text-gray-600 dark:text-gray-300">
           Legenda:
         </div>
         <div className="flex flex-wrap gap-4">
@@ -160,7 +157,7 @@ export default function StationMap() {
             </div>
           ))}
         </div>
-        <div className="border-t border-gray-200 pt-2">
+        <div className="border-t border-gray-200 dark:border-gray-600 pt-2">
           <div className="flex justify-between">
             <span>Marker size indicates data quality</span>
             <span className="flex items-center gap-2">

@@ -14,8 +14,8 @@ export default function MethodDistributionChart({ filters }) {
     fetcher
   );
 
-  if (error) return <div className="bg-white rounded-lg shadow-md p-6 text-red-500">Errore nel caricamento dei metodi</div>;
-  if (!data || !Array.isArray(data)) return <div className="bg-white rounded-lg shadow-md p-6 text-gray-500">Caricamento dati...</div>;
+  if (error) return <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-red-500 transition-colors">Errore nel caricamento dei metodi</div>;
+  if (!data || !Array.isArray(data)) return <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-gray-500 dark:text-gray-400 transition-colors">Caricamento dati...</div>;
 
   const counts = { audio: 0, image: 0 };
   data.forEach((obs) => {
@@ -29,8 +29,8 @@ export default function MethodDistributionChart({ filters }) {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-      <h2 className="text-lg font-semibold mb-4 text-primary">Metodi di Raccolta</h2>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 transition-colors">
+      <h2 className="text-lg font-semibold mb-4 text-primary dark:text-blue-400">Metodi di Raccolta</h2>
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
           <Pie
@@ -47,7 +47,14 @@ export default function MethodDistributionChart({ filters }) {
             ))}
           </Pie>
           <Tooltip
-            contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "8px" }}
+            contentStyle={{ 
+              backgroundColor: "var(--bg-card, #fff)", 
+              borderColor: "#e5e7eb", 
+              borderRadius: "8px", 
+              padding: "8px",
+              color: "currentColor"
+            }}
+            className="dark:bg-gray-800 dark:border-gray-600 dark:text-white"
             content={({ active, payload }) => {
               if (active === null || payload.length === 0) return null;
               const { name } = payload[0].payload;
@@ -59,7 +66,7 @@ export default function MethodDistributionChart({ filters }) {
                   style={{ cursor: "pointer", userSelect: "none" }}
                 >
                   <div className="font-medium">{name}</div>
-                  <div className="text-sm text-muted">{payload[0].value} osservazioni</div>
+                  <div className="text-sm text-muted dark:text-gray-400">{payload[0].value} osservazioni</div>
                 </div>
               );
             }}

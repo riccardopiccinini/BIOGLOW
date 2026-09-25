@@ -35,14 +35,14 @@ export default function StatsCard({ totalObservations, speciesCount, shannonInde
       {stats.map((stat, index) => (
         <div
           key={index}
-          className={`bg-white rounded-lg shadow-md p-5 border-l-4 ${stat.borderColor} ${stat.clickable ? "cursor-pointer hover:bg-gray-50 transition" : ""}`}
+          className={`bg-white dark:bg-gray-800 rounded-lg shadow-md p-5 border-l-4 ${stat.borderColor} ${stat.clickable ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition" : ""}`}
           onClick={stat.onClick}
         >
           <div className="flex items-center gap-2 mb-1">
             <stat.icon className={`${stat.iconColor} h-5 w-5`} />
-            <span className="text-sm font-medium text-muted">{stat.label}</span>
+            <span className="text-sm font-medium text-muted dark:text-gray-400">{stat.label}</span>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
         </div>
       ))}
     </div>

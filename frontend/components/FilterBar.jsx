@@ -20,29 +20,29 @@ export default function FilterBar({ value, onFilterChange }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-5 mb-6 space-y-4">
-      <h3 className="text-lg font-semibold text-primary">Filtri</h3>
+    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-5 mb-6 space-y-4 transition-colors">
+      <h3 className="text-lg font-semibold text-primary dark:text-blue-400">Filtri</h3>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Stazione */}
-        <div>
-          <label className="block text-sm font-medium text-muted mb-1">Stazione</label>
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-muted dark:text-gray-400">Stazione</label>
           <input
             type="text"
             value={formValues.station}
             onChange={(e) => handleChange("station", e.target.value)}
             placeholder="es. SECCHIA-01"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
           />
         </div>
 
         {/* Metodo */}
-        <div>
-          <label className="block text-sm font-medium text-muted mb-1">Metodo</label>
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-muted dark:text-gray-400">Metodo</label>
           <select
             value={formValues.method}
             onChange={(e) => handleChange("method", e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
           >
             {METHOD_FILTER_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -51,24 +51,24 @@ export default function FilterBar({ value, onFilterChange }) {
         </div>
 
         {/* Data inizio */}
-        <div>
-          <label className="block text-sm font-medium text-muted mb-1">Dal</label>
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-muted dark:text-gray-400">Dal</label>
           <input
             type="date"
             value={formValues.startDate}
             onChange={(e) => handleChange("startDate", e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
           />
         </div>
 
         {/* Data fine */}
-        <div>
-          <label className="block text-sm font-medium text-muted mb-1">Al</label>
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-muted dark:text-gray-400">Al</label>
           <input
             type="date"
             value={formValues.endDate}
             onChange={(e) => handleChange("endDate", e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
           />
         </div>
       </div>

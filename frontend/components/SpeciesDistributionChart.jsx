@@ -31,8 +31,8 @@ export default function SpeciesDistributionChart({ filters }) {
     jsonFetcher
   );
 
-  if (error) return <div className="bg-white rounded-lg shadow-md p-6 text-red-500">Errore nel caricamento della distribuzione</div>;
-  if (!data || !Array.isArray(data)) return <div className="bg-white rounded-lg shadow-md p-6 text-gray-500">Caricamento dati...</div>;
+  if (error) return <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-red-500 transition-colors">Errore nel caricamento della distribuzione</div>;
+  if (!data || !Array.isArray(data)) return <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-gray-500 dark:text-gray-400 transition-colors">Caricamento dati...</div>;
   
   const counts = {};
   const speciesCategories = {};
@@ -57,18 +57,19 @@ export default function SpeciesDistributionChart({ filters }) {
   chartData.sort((a, b) => b.count - a.count);
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-      <h2 className="text-lg font-semibold mb-4 text-primary">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 transition-colors">
+      <h2 className="text-lg font-semibold mb-4 text-primary dark:text-blue-400">
         Distribuzione osservazioni per specie
       </h2>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart layout="vertical" data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis type="number" tick={{ fontSize: 12, fill: "#6b7280" }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
+          <XAxis type="number" tick={{ fontSize: 12, fill: "currentColor" }} className="text-gray-500 dark:text-gray-400" />
           <YAxis
             type="category"
             dataKey="species"
-            tick={{ fontSize: 12, fill: "#6b7280" }}
+            tick={{ fontSize: 12, fill: "currentColor" }}
+            className="text-gray-500 dark:text-gray-400"
             width={120}
           />
           <Tooltip
@@ -77,14 +78,14 @@ export default function SpeciesDistributionChart({ filters }) {
               const { species, count, category } = payload[0].payload;
               return (
                 <div
-                  className="bg-white p-3 rounded-lg shadow-xl border-2 border-slate-200 flex flex-col items-start gap-2"
+                  className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-xl border-2 border-slate-200 dark:border-gray-600 flex flex-col items-start gap-2"
                   onClick={() => router.push(`/species/${encodeURIComponent(species)}`)}
                   style={{ cursor: "pointer", userSelect: "none", minWidth: "150px" }}
                 >
-                  <div className="font-bold text-gray-900">{species}</div>
-                  <div className="text-sm text-muted">{count} osservazioni</div>
+                  <div className="font-bold text-gray-900 dark:text-white">{species}</div>
+                  <div className="text-sm text-muted dark:text-gray-400">{count} osservazioni</div>
                   {!loadingRef && (
-                    <div className="text-xs font-medium text-primary">
+                    <div className="text-xs font-medium text-primary dark:text-blue-400">
                       Categoria: {SPECIES_CATEGORIES[category]?.label || category}
                     </div>
                   )}
