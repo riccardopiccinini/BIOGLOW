@@ -2,6 +2,7 @@ import httpx
 import uuid
 import random
 import asyncio
+import mimetypes
 from pathlib import Path
 from db import supabase
 from config import config
@@ -34,11 +35,16 @@ async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -
     if not config.SUPABASE_STORAGE_BUCKET:
         return f"https://via.placeholder.com/400x300/2d6a4f/ffffff?text={filename}"
 
+    # Determine the correct MIME type based on extension
+    mime_type, _ = mimetypes.guess_type(filename)
+    if not mime_type:
+        mime_type = "application/octet-stream"
+
     try:
         res = supabase.storage.from_(config.SUPABASE_STORAGE_BUCKET).upload(
             path=path,
             file=file_bytes,
-            file_options={"content-type": "application/octet-stream"}
+            file_options={"content-type": mime_type}
         )
         if not res:
             raise Exception("Failed to upload file to Supabase Storage")
@@ -48,7 +54,6 @@ async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -
         return f"https://via.placeholder.com/400x300/2d6a4f/ffffff?text={filename}"
 
 async def identify_image(file_path: Path) -> dict:
-    # FORZATURA MODALITÀ DEMO
     if config.DEMO_MODE:
         mock = random.choice(MOCK_SPECIES_IMAGES).copy()
         mock["confidence"] = round(mock["confidence"] + random.uniform(-0.05, 0.05), 2)
@@ -89,7 +94,6 @@ async def identify_image(file_path: Path) -> dict:
     return {"species": "Sconosciuta", "confidence": 0.0, "source": "error"}
 
 async def identify_audio(file_path: Path) -> dict:
-    # FORZATURA MODALITÀ DEMO
     if config.DEMO_MODE:
         mock = random.choice(MOCK_SPECIES_AUDIO).copy()
         mock["confidence"] = round(mock["confidence"] + random.uniform(-0.05, 0.05), 2)

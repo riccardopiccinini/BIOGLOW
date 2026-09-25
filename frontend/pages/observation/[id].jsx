@@ -19,7 +19,6 @@ export default function ObservationDetail() {
   const updateStatus = async (newStatus) => {
     if (!obs) return;
 
-    // OTTIMISTIC UPDATE: aggiorniamo l'interfaccia immediatamente
     const optimisticData = { ...obs, verification_status: newStatus };
     
     try {
@@ -30,8 +29,6 @@ export default function ObservationDetail() {
         return;
       }
 
-      // Aggiorniamo SWR in modo ottimistico
-      // mutate(data, { optimisticData, rollbackOnError: true })
       await mutate(
         async () => {
           const response = await fetch(`/observations/${id}`, {
@@ -97,7 +94,7 @@ export default function ObservationDetail() {
                 </div>
                 <p className="text-gray-500">File Audio</p>
                 <audio controls className="mt-4 w-full">
-                  <source src={obs.media_url} type="audio/mpeg" />
+                  <source src={obs.media_url} />
                   Il tuo browser non supporta l'elemento audio.
                 </audio>
               </div>
