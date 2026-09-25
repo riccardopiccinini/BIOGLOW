@@ -155,7 +155,10 @@ async def get_all_alerts(status: Optional[str] = None):
 
 @app.get("/stations")
 async def get_all_stations():
-    return await get_stations()
+    try:
+        return await get_stations()
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 @app.get("/stations/{station_id}")
 async def get_station(station_id: str):

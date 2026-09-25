@@ -75,17 +75,30 @@ async def save_observation(observation: dict):
 async def get_stations():
     """Recupera la lista delle stazioni e il numero di osservazioni per ciascuna."""
     try:
+        # Log per debug
+        print("DEBUG: Fetching stations from Supabase...")
         res_stations = supabase.table("stations").select("*").execute()
-        stations = res_stations.data if res_stations.data else []
+        
+        if not res_stations.data:
+            print("DEBUG: No stations found in table.")
+            return []
+            
+        stations = res_stations.data
+        print(f"DEBUG: Found {len(stations)} stations.")
         
         for s in stations:
-            res_obs = supabase.table("osservazioni").select("id", count="exact").eq("station_id", s["id"]).execute()
-            s["obs_count"] = res_obs.count if hasattr(res_obs, "count") else 0
+            try:
+                res_obs = supabase.table("osservazioni").select("id", count="exact").eq("station_id", s["id"]).execute()
+                s["obs_count"] = res_obs.count if hasattr(res_obs, "count") else 0
+            except Exception as e_obs:
+                print(f"DEBUG: Error counting obs for station {s.get('id')}: {e_obs}")
+                s["obs_count"] = 0
             
         return stations
     except Exception as e:
-        print(f"Error fetching stations with counts: {e}")
-        return []
+        print(f"CRITICAL ERROR in get_stations: {traceback.format_exc()}")
+        # Ritorna None invece di [] per permettere al main di lanciare un 500 esplicito se vogliamo
+        raise e
 
 async def get_station_detail(station_id: str):
     res_station = supabase.table("stations").select("*").eq("id", station_id).single().execute()
