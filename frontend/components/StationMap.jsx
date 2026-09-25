@@ -13,7 +13,7 @@ export default function StationMap() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch(`/api/stations`)
+    fetch(`/stations`)
       .then((res) => {
         if (!res.ok) throw new Error("Impossible caricare le stazioni");
         return res.json();
