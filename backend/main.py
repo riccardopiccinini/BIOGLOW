@@ -73,10 +73,13 @@ async def observations_stats(
     end: Optional[str] = None
 ):
     res = await get_stats(station_id, method, start, end)
+    if not res:
+        return JSONResponse(status_code=500, content={"error": "Impossibile recuperare le statistiche"})
+    
     return {
-        "total_observations": res["total"],
-        "species_count": res["species_count"],
-        "shannon_index": shannon_index(res["observations"])
+        "total_observations": res.get("total", 0),
+        "species_count": res.get("species_count", 0),
+        "shannon_index": shannon_index(res.get("observations", []))
     }
 
 @app.get("/observations")
@@ -184,7 +187,10 @@ async def receive_observation(
     with open(tmp_path, "rb") as f:
         media_url = await upload_to_storage(f.read(), file.filename, station_id)
 
-    confidence = result["confidence"]
+    # Robust access to result
+    confidence = result.get("confidence", 0.0) if result else 0.0
+    species = result.get("species", "Sconosciuta") if result else "Sconosciuta"
+    
     if confidence >= CONFIDENCE_THRESHOLDS["auto_confirm"]:
         verification_status = "confirmed"
     elif confidence >= CONFIDENCE_THRESHOLDS["min_acceptable"]:
@@ -193,7 +199,7 @@ async def receive_observation(
         verification_status = "excluded"
 
     observation = {
-        "species": result["species"],
+        "species": species,
         "method": method,
         "media_url": media_url,
         "station_id": station_id,
@@ -205,10 +211,14 @@ async def receive_observation(
     from db import save_observation
     save_res = await save_observation(observation)
 
-    if save_res.data:
-        obs_id = save_res.data[0]["id"]
-        await check_and_create_alert({**observation, "id": obs_id})
-        return JSONResponse(content={"observation_id": obs_id, "species": result["species"], "confidence": confidence})
+    # Robust access to save_res.data
+    if save_res and save_res.data and len(save_res.data) > 0:
+        obs_data = save_res.data[0]
+        if obs_data:
+            obs_id = obs_data.get("id")
+            if obs_id:
+                await check_and_create_alert({**observation, "id": obs_id})
+                return JSONResponse(content={"observation_id": obs_id, "species": species, "confidence": confidence})
 
     raise HTTPException(status_code=500, detail="Errore nel salvataggio dell'osservazione")
 

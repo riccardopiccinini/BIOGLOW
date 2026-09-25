@@ -32,7 +32,6 @@ async def generate_summary_pdf(station_id=None):
         raise Exception("Impossibile recuperare le statistiche dal database")
 
     # Calcolo l'indice di Shannon usando i dati recuperati
-    # Assicuriamoci che stats['observations'] esista ed è una lista
     obs_for_shannon = stats.get('observations', []) if stats else []
     shannon_val = shannon_index(obs_for_shannon)
     
@@ -71,10 +70,17 @@ async def generate_summary_pdf(station_id=None):
     pdf.set_font("helvetica", "", 10)
     if observations:
         for obs in observations:
-            pdf.cell(60, 8, str(obs.get("species", "N/A")), border=1)
-            pdf.cell(30, 8, str(obs.get("method", "N/A")), border=1)
-            pdf.cell(30, 8, f"{float(obs.get('confidence', 0)*100):.1f}%", border=1)
-            pdf.cell(40, 8, str(obs.get("date_time", "N/A")[:10]), border=1)
+            species = str(obs.get("species", "N/A"))
+            method = str(obs.get("method", "N/A"))
+            confidence = obs.get('confidence', 0)
+            # Gestione sicura della data
+            dt = obs.get("date_time")
+            date_str = dt[:10] if dt and isinstance(dt, str) else "N/A"
+            
+            pdf.cell(60, 8, species, border=1)
+            pdf.cell(30, 8, method, border=1)
+            pdf.cell(30, 8, f"{float(confidence*100):.1f}%", border=1)
+            pdf.cell(40, 8, date_str, border=1)
             pdf.ln()
     else:
         pdf.cell(0, 10, "Nessuna osservazione trovata per il periodo/stazione selezionata.", ln=True)
