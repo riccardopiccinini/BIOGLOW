@@ -160,14 +160,18 @@ async def receive_observation(
         media_url = await upload_to_storage(f.read(), file.filename, station_id)
 
     # Auto-confirm if confidence >= 0.85
-    verification_status = "confirmed" if result["confidence"] >= 0.85 else "pending"
+    confidence = result["confidence"]
+    verification_status = "confirmed" if confidence >= 0.85 else "pending"
+    
+    # LOGGING per debug su Render
+    print(f"DEBUG: New observation - Species: {result['species']}, Confidence: {confidence}, Status: {verification_status}")
 
     observation = {
         "species": result["species"],
         "method": method,
         "media_url": media_url,
         "station_id": station_id,
-        "confidence": result["confidence"],
+        "confidence": confidence,
         "verification_status": verification_status,
         "date_time": datetime.now(timezone.utc).isoformat()
     }
@@ -178,6 +182,6 @@ async def receive_observation(
     if save_res.data:
         obs_id = save_res.data[0]["id"]
         await check_and_create_alert({**observation, "id": obs_id})
-        return JSONResponse(content={"observation_id": obs_id, "species": result["species"], "confidence": result["confidence"]})
+        return JSONResponse(content={"observation_id": obs_id, "species": result["species"], "confidence": confidence})
 
     raise HTTPException(status_code=500, detail="Errore nel salvataggio dell'osservazione")
