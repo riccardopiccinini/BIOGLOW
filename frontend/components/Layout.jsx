@@ -19,7 +19,6 @@ export default function Layout({ children }) {
   };
 
   useEffect(() => {
-    // Theme Init
     if (!initializedRef.current) {
       if (darkMode) {
         document.documentElement.classList.add("dark");
@@ -29,7 +28,6 @@ export default function Layout({ children }) {
       initializedRef.current = true;
     }
 
-    // Auth Init
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
@@ -37,7 +35,6 @@ export default function Layout({ children }) {
     };
     checkUser();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });

@@ -16,14 +16,18 @@ export default function ObservationDetail() {
   );
 
   const updateStatus = async (newStatus) => {
+    console.log("DEBUG: Inizio aggiornamento stato per ID:", id, "Nuovo stato:", newStatus);
     try {
+      console.log("DEBUG: Richiesta sessione a Supabase...");
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
+        console.log("DEBUG: Nessuna sessione trovata. Redirect al login.");
         router.push("/login");
         return;
       }
 
+      console.log("DEBUG: Sessione trovata, invio richiesta PATCH al backend...");
       const response = await fetch(`/observations/${id}`, {
         method: "PATCH",
         headers: { 
@@ -33,13 +37,18 @@ export default function ObservationDetail() {
         body: JSON.stringify({ verification_status: newStatus }),
       });
 
+      console.log("DEBUG: Risposta dal backend:", response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("DEBUG: Errore API:", errorData);
         throw new Error(errorData.detail || "Errore durante l'aggiornamento");
       }
 
+      console.log("DEBUG: Aggiornamento riuscito. Ricarico dati...");
       await mutate();
     } catch (e) {
+      console.error("DEBUG: Eccezione catturata:", e);
       alert(e.message || "Errore durante l'aggiornamento dello stato");
     }
   };
