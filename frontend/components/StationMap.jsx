@@ -175,7 +175,7 @@ export default function StationMap() {
             <span className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-primary/20" />
               <span>Stazione attiva</span>
-            </div>
+            </span>
           </div>
         </div>
       </div>
