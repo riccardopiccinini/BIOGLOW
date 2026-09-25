@@ -160,7 +160,8 @@ async def get_station(station_id: str):
 async def receive_observation(
     file: UploadFile = File(...),
     method: str = "image",
-    station_id: str = "SECCHIA-01"
+    station_id: Optional[str] = "SECCHIA-01",
+    date_time: Optional[str] = None
 ):
     tmp_path = Path(f"/tmp/{file.filename}")
     with open(tmp_path, "wb") as f:
@@ -193,7 +194,7 @@ async def receive_observation(
         "station_id": station_id,
         "confidence": confidence,
         "verification_status": verification_status,
-        "date_time": datetime.now(timezone.utc).isoformat()
+        "date_time": date_time or datetime.now(timezone.utc).isoformat()
     }
 
     from db import save_observation
