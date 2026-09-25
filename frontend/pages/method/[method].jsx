@@ -1,7 +1,8 @@
 import { useRouter } from "next/router";
 import Layout from "../../components/Layout";
 import ObservationList from "../../components/ObservationList";
-import { getMethodLabel, OBSERVATION_METHODS } from "../../lib/utils";
+import { getMethodLabel } from "../../lib/utils";
+import { OBSERVATION_METHODS } from "../../lib/constants";
 
 export default function MethodDetail() {
   const router = useRouter();

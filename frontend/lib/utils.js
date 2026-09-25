@@ -191,3 +191,6 @@ export const debounce = (fn, delay) => {
     timeoutId = setTimeout(() => fn(...args), delay);
   };
 };
+
+// Re-export constants from constants.js for convenience
+export { OBSERVATION_METHODS } from "./constants";
