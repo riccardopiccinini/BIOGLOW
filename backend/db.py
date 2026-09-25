@@ -7,7 +7,7 @@ from biodiversity import shannon_index
 
 supabase = create_client(config.SUPABASE_URL, config.SUPABASE_KEY)
 
-async def get_observations(station_id=None, method=None, start=None, end=None, limit=10, order="-date_time"):
+async def get_observations(station_id=None, method=None, start=None, end=None, min_confidence=None, limit=10, order="-date_time"):
     query = supabase.table("osservazioni").select("*")
 
     if station_id:
@@ -18,6 +18,8 @@ async def get_observations(station_id=None, method=None, start=None, end=None, l
         query = query.gte("date_time", start)
     if end:
         query = query.lte("date_time", end)
+    if min_confidence is not None:
+        query = query.gte("confidence", min_confidence)
 
     if order.startswith("-"):
         col = order[1:]

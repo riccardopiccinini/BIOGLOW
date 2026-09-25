@@ -88,11 +88,12 @@ async def get_observations(
     method: Optional[str] = None,
     start: Optional[str] = None,
     end: Optional[str] = None,
+    min_confidence: Optional[float] = None,
     limit: int = 10,
     order: str = "-date_time"
 ):
     try:
-        return await db_get_observations(station_id, method, start, end, limit, order)
+        return await db_get_observations(station_id, method, start, end, min_confidence, limit, order)
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e), "type": type(e).__name__})
 
@@ -167,11 +168,11 @@ async def get_station(station_id: str):
 async def receive_observation(
     file: UploadFile = File(...),
     method: str = "image",
-    station_id: Optional[str] = "SECCHIA-01",
+    station_id: str = Query(...), # Rimosso default, ora obbligatorio per coerenza DB
     date_time: Optional[str] = None
 ):
     if not await station_exists(station_id):
-        raise HTTPException(status_code=400, detail=f"Stazione {station_id} non valida o non censita")
+        raise HTTPException(status_code=400, detail=f"Stazione {station_id} non valida o non censita nel DB")
 
     tmp_path = Path(f"/tmp/{file.filename}")
     with open(tmp_path, "wb") as f:
@@ -182,12 +183,12 @@ async def receive_observation(
     elif method == "audio":
         result = await identify_audio(tmp_path)
     else:
-        raise HTTPException(status_code=400, detail="Unsupported method")
+        raise HTTPException(status_code=400, detail="Metodo non supportato")
 
     with open(tmp_path, "rb") as f:
         media_url = await upload_to_storage(f.read(), file.filename, station_id)
 
-    # Robust access to result
+    # Filtri di confidenza dinamici
     confidence = result.get("confidence", 0.0) if result else 0.0
     species = result.get("species", "Sconosciuta") if result else "Sconosciuta"
     
@@ -198,6 +199,7 @@ async def receive_observation(
     else:
         verification_status = "excluded"
 
+    # Gestione date dinamica (se non fornita, usa l'ora corrente UTC)
     observation = {
         "species": species,
         "method": method,
@@ -211,7 +213,6 @@ async def receive_observation(
     from db import save_observation
     save_res = await save_observation(observation)
 
-    # Robust access to save_res.data
     if save_res and save_res.data and len(save_res.data) > 0:
         obs_data = save_res.data[0]
         if obs_data:
