@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from supabase import create_client
 from config import config
 from biodiversity import shannon_index
-from constants import MOCK_STATIONS
 
 supabase = create_client(config.SUPABASE_URL, config.SUPABASE_KEY)
 
@@ -81,13 +80,11 @@ async def get_stations():
 
 async def get_station_detail(station_id: str):
     """Recupera dettagli di una stazione dal DB."""
-    # 1. Info stazione
     res_station = supabase.table("stations").select("*").eq("id", station_id).single().execute()
     station_info = res_station.data
     if not station_info:
         return None
 
-    # 2. Stats globali
     stats = await get_stats(station_id=station_id)
     total_obs = stats["total"]
     species_count = stats["species_count"]
@@ -95,10 +92,8 @@ async def get_station_detail(station_id: str):
     if total_obs > 0:
         shannon_global = shannon_index(stats["observations"])
 
-    # 3. Ultime 5 osservazioni
     latest_obs = await get_observations(station_id=station_id, limit=5, order="-date_time")
 
-    # 4. Specie osservate
     species_counts = {}
     for obs in stats["observations"]:
         sp = obs.get("species")
