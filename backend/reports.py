@@ -1,6 +1,7 @@
 from fpdf import FPDF
 from datetime import datetime
 from db import get_stats, get_observations
+from biodiversity import shannon_index
 import asyncio
 
 class BiodiversityReport(FPDF):
@@ -24,6 +25,9 @@ async def generate_summary_pdf(station_id=None):
     stats = await get_stats(station_id=station_id)
     observations = await get_observations(station_id=station_id, limit=1000)
     
+    # Calcolo l'indice di Shannon usando i dati recuperati (come fa l'API)
+    shannon_val = shannon_index(stats['observations'])
+    
     pdf = BiodiversityReport()
     pdf.add_page()
     
@@ -38,7 +42,7 @@ async def generate_summary_pdf(station_id=None):
     pdf.cell(0, 8, f"Stazione: {station_id if station_id else 'Tutte le stazioni'}", ln=True)
     pdf.cell(0, 8, f"Osservazioni Totali: {stats['total']}", ln=True)
     pdf.cell(0, 8, f"Specie Individuate: {stats['species_count']}", ln=True)
-    pdf.cell(0, 8, f"Indice di Biodiversità (Shannon): {stats['shannon_index']:.2f}", ln=True)
+    pdf.cell(0, 8, f"Indice di Biodiversità (Shannon): {shannon_val:.2f}", ln=True)
     pdf.ln(10)
     
     # Tabella Osservazioni
