@@ -1,9 +1,10 @@
-import math
 import traceback
 from collections import defaultdict
 from datetime import datetime, timedelta
 from supabase import create_client
 from config import config
+from biodiversity import shannon_index
+from constants import MOCK_STATIONS
 
 supabase = create_client(config.SUPABASE_URL, config.SUPABASE_KEY)
 
@@ -73,38 +74,7 @@ async def save_observation(observation: dict):
 async def get_stations():
     """Restituisce lista stazioni con coordinate per la mappa.
     Per ora ritorna dati mock, in futuro si può creare tabella stations."""
-    # Stazioni mock per area Secchia
-    stations = [
-        {
-            "id": "SECCHIA-01",
-            "name": "Secchia Nord",
-            "lat": 44.6472,
-            "lon": 10.9258,
-            "shannon": 1.45
-        },
-        {
-            "id": "SECCHIA-02",
-            "name": "Secchia Centro",
-            "lat": 44.6321,
-            "lon": 10.9189,
-            "shannon": 1.32
-        },
-        {
-            "id": "SECCHIA-03",
-            "name": "Secchia Sud",
-            "lat": 44.6156,
-            "lon": 10.9012,
-            "shannon": 1.58
-        },
-        {
-            "id": "SECCHIA-04",
-            "name": "Expansione Est",
-            "lat": 44.6289,
-            "lon": 10.9456,
-            "shannon": 1.21
-        },
-    ]
-    return stations
+    return MOCK_STATIONS
 
 
 async def get_station_detail(station_id: str):
@@ -147,21 +117,3 @@ async def get_station_detail(station_id: str):
         "species": species_list,
         "latest_observations": latest_obs
     }
-
-
-def shannon_index(observations):
-    total = len(observations)
-    if total == 0:
-        return 0.0
-
-    counts = {}
-    for obs in observations:
-        sp = obs.get('species')
-        if sp:
-            counts[sp] = counts.get(sp, 0) + 1
-
-    h = 0.0
-    for cnt in counts.values():
-        p = cnt / total
-        h -= p * math.log(p)
-    return h

@@ -4,6 +4,7 @@ import random
 from pathlib import Path
 from db import supabase
 from config import config
+from constants import OBSERVATION_METHODS
 
 # Specie mock per test (comuni in zona Secchia)
 MOCK_SPECIES_IMAGES = [
