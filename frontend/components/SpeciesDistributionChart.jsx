@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import useSWR from "swr";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Cell } from "recharts";
 import { useRouter } from "next/router";
 import { jsonFetcher, buildFilterParams } from "../lib/utils";
 import { CHART_COLORS, SPECIES_CATEGORIES } from "../lib/constants";
@@ -72,21 +72,14 @@ export default function SpeciesDistributionChart({ filters }) {
             width={120}
           />
           <Tooltip
-            contentStyle={{ 
-              backgroundColor: "#fff", 
-              border: "2px solid #cbd5e1", 
-              borderRadius: "8px", 
-              padding: "12px",
-              boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" 
-            }}
             content={({ active, payload }) => {
               if (!active || !payload || payload.length === 0) return null;
               const { species, count, category } = payload[0].payload;
               return (
                 <div
-                  className="flex flex-col items-start gap-2"
+                  className="bg-white p-3 rounded-lg shadow-xl border-2 border-slate-200 flex flex-col items-start gap-2"
                   onClick={() => router.push(`/species/${encodeURIComponent(species)}`)}
-                  style={{ cursor: "pointer", userSelect: "none" }}
+                  style={{ cursor: "pointer", userSelect: "none", minWidth: "150px" }}
                 >
                   <div className="font-bold text-gray-900">{species}</div>
                   <div className="text-sm text-muted">{count} osservazioni</div>
