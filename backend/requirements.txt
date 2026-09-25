@@ -6,3 +6,4 @@ supabase
 httpx
 python-dotenv
 fpdf2
+birdnetlib
