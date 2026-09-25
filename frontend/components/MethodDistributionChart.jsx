@@ -56,12 +56,12 @@ export default function MethodDistributionChart({ filters }) {
             contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "8px" }}
             content={({ active, payload }) => {
               if (active === null || payload.length === 0) return null;
-              const { name } = payload[0];
+              const { name } = payload[0].payload;
               const method = name === "Audio" ? "audio" : "image";
               return (
                 <div
                   className="flex flex-col items-start gap-2"
-                  onClick={() => router.push(`/?method=${method}`)}
+                  onClick={() => router.push(`/method/${method}`)}
                   style={{ cursor: "pointer", userSelect: "none" }}
                 >
                   <div className="font-medium">{name}</div>

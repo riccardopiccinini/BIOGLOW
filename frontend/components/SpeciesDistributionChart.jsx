@@ -21,7 +21,6 @@ export default function SpeciesDistributionChart({ filters }) {
   if (error) return <div className="bg-white rounded-lg shadow-md p-6 text-red-500">Errore nel caricamento della distribuzione</div>;
   if (!data || !Array.isArray(data)) return <div className="bg-white rounded-lg shadow-md p-6 text-gray-500">Caricamento…</div>;
 
-  // conta per specie
   const counts = {};
   data.forEach((obs) => {
     const sp = obs.species || "Sconosciuta";
@@ -38,7 +37,7 @@ export default function SpeciesDistributionChart({ filters }) {
         Distribuzione osservazioni per specie
       </h2>
       <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={chartData}>
+        <BarChart layout="vertical" data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis type="number" tick={{ fontSize: 12, fill: "#6b7280" }} />
           <YAxis
@@ -47,19 +46,19 @@ export default function SpeciesDistributionChart({ filters }) {
             tick={{ fontSize: 12, fill: "#6b7280" }}
             width={120}
           />
-          {/* Custom Tooltip that is clickable to navigate to species detail */}
           <Tooltip
             contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "8px" }}
-            content={({ label, value, payload }) => {
-              const species = label; // species name from YAxis
+            content={({ active, payload }) => {
+              if (!active || !payload || payload.length === 0) return null;
+              const { species, count } = payload[0].payload;
               return (
                 <div
                   className="flex flex-col items-start gap-2"
-                  onClick={() => router.push(`/species-distinct?species=${encodeURIComponent(species)}`)}
+                  onClick={() => router.push(`/species/${encodeURIComponent(species)}`)}
                   style={{ cursor: "pointer", userSelect: "none" }}
                 >
                   <div className="font-medium">{species}</div>
-                  <div className="text-sm text-muted">{value} osservazioni</div>
+                  <div className="text-sm text-muted">{count} osservazioni</div>
                 </div>
               );
             }}

@@ -1,10 +1,10 @@
 import { useState } from "react";
+import { useRouter } from "next/router";
 import useSWR from "swr";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
 const typeLabels = {
-  rare: "Rara",
   protected: "Protetta",
   invasive: "Invasiva",
 };
@@ -22,20 +22,19 @@ const statusLabels = {
 };
 
 const typeColors = {
-  rare: "bg-purple-100 text-purple-800",
   protected: "bg-blue-100 text-blue-800",
   invasive: "bg-red-100 text-red-800",
 };
 
-// Mock data to ensure the section is populated even if DB is empty
 const MOCK_ALERTS = [
   { id: "1", species: "Lontra europea", alert_type: "protected", status: "confirmed" },
   { id: "2", species: "Nuotatore Gigante", alert_type: "invasive", status: "pending" },
-  { id: "3", species: "Airone Cenerino", alert_type: "rare", status: "confirmed" },
+  { id: "3", species: "Gambero della Louisiana", alert_type: "invasive", status: "confirmed" },
 ];
 
 export default function AlertList({ statusFilter = "" }) {
   const [expanded, setExpanded] = useState(false);
+  const router = useRouter();
   const params = new URLSearchParams();
   if (statusFilter) params.append("status", statusFilter);
 
@@ -44,9 +43,11 @@ export default function AlertList({ statusFilter = "" }) {
     fetcher
   );
 
-  // Use API data if available, otherwise fallback to mock data
   const alertsData = (data && Array.isArray(data) && data.length > 0) ? data : MOCK_ALERTS;
-  const alerts = alertsData.slice(0, expanded ? 20 : 5);
+  
+  // Filter: only protected and invasive
+  const filteredAlerts = alertsData.filter(a => a.alert_type === 'protected' || a.alert_type === 'invasive');
+  const alerts = filteredAlerts.slice(0, expanded ? 20 : 5);
 
   if (error) return <div className="bg-white rounded-lg shadow-md p-6 text-red-500">Errore nel caricamento degli alert</div>;
   if (!data && !MOCK_ALERTS) return <div className="bg-white rounded-lg shadow-md p-6 text-gray-500">Caricamento…</div>;
@@ -59,7 +60,11 @@ export default function AlertList({ statusFilter = "" }) {
       )}
       <div className="space-y-3">
         {alerts.map((alert) => (
-          <div key={alert.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div 
+            key={alert.id} 
+            onClick={() => router.push(`/species/${encodeURIComponent(alert.species)}`)}
+            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:shadow-md transition cursor-pointer"
+          >
             <div>
               <p className="font-medium text-gray-900">{alert.species}</p>
               <span className={`px-2 py-0.5 text-xs font-medium rounded ${typeColors[alert.alert_type] || "bg-gray-100 text-gray-700"}`}>
