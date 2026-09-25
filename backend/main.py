@@ -158,13 +158,16 @@ async def receive_observation(
     with open(tmp_path, "rb") as f:
         media_url = await upload_to_storage(f.read(), file.filename, station_id)
 
+    # Auto-confirm if confidence >= 0.85
+    verification_status = "confirmed" if result["confidence"] >= 0.85 else "pending"
+
     observation = {
         "species": result["species"],
         "method": method,
         "media_url": media_url,
         "station_id": station_id,
         "confidence": result["confidence"],
-        "verification_status": "pending",
+        "verification_status": verification_status,
         "date_time": "2026-09-23T12:00:00Z" # Simplified, should be current time
     }
 
