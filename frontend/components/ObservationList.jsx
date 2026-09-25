@@ -14,7 +14,7 @@ export default function ObservationList({ filters, data: passedData }) {
   });
 
   const { data, error } = useSWR(
-    passedData ? null : \`/observations?\${params.toString()}\`,
+    passedData ? null : `/observations?${params.toString()}`,
     fetcher
   );
 
@@ -32,14 +32,14 @@ export default function ObservationList({ filters, data: passedData }) {
           <p className="text-gray-500 text-center py-4">Nessuna osservazione trovata</p>
         )}
         {observations.map((obs) => (
-          <a key={obs.id} href={\`/observation/\${obs.id}\`} className="block">
+          <a key={obs.id} href={`/observation/${obs.id}`} className="block">
             <div className="flex items-start gap-4 bg-gray-50 p-4 rounded-lg hover:shadow-md transition dark:bg-gray-700">
               {/* Anteprima immagine / icona audio */}
               <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center dark:bg-gray-600">
                 {obs.method === "image" && obs.media_url ? (
                   <img
                     src={obs.media_url}
-                    alt={\`Foto di \${obs.species}\`}
+                    alt={`Foto di ${obs.species}`}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -50,7 +50,7 @@ export default function ObservationList({ filters, data: passedData }) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <p className="font-medium text-gray-900 truncate dark:text-white">{obs.species ?? "Specie sconosciuta"}</p>
-                  <span className={\`px-2 py-0.5 text-xs font-medium rounded \${VERIFICATION_STATUS[obs.verification_status]?.color || "bg-muted text-white"}\`}>
+                  <span className={`px-2 py-0.5 text-xs font-medium rounded ${VERIFICATION_STATUS[obs.verification_status]?.color || "bg-muted text-white"}`}>
                     {VERIFICATION_STATUS[obs.verification_status]?.label || "Sconosciuto"}
                   </span>
                 </div>
@@ -73,7 +73,7 @@ export default function ObservationList({ filters, data: passedData }) {
                   <div className="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-600">
                     <div
                       className="bg-success h-1.5 rounded-full transition-all duration-300"
-                      style={{ width: \`\${(obs.confidence ?? 0) * 100}%\` }}
+                      style={{ width: `${(obs.confidence ?? 0) * 100}%` }}
                     ></div>
                   </div>
                 </div>
