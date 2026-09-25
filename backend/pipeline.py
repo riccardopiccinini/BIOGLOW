@@ -27,16 +27,28 @@ if BIRDNET_AVAILABLE:
         BIRDNET_AVAILABLE = False
 
 async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -> str:
-    ext = Path(filename).suffix
+    ext = Path(filename).suffix.lower()
     file_id = str(uuid.uuid4())
     path = f"stations/{station_id}/{file_id}{ext}"
 
     if not config.SUPABASE_STORAGE_BUCKET:
         return f"https://via.placeholder.com/400x300/2d6a4f/ffffff?text={filename}"
 
-    mime_type, _ = mimetypes.guess_type(filename)
+    # Explicit mapping for common project types to avoid application/octet-stream
+    manual_mimes = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".wav": "audio/wav",
+        ".mp3": "audio/mpeg",
+        ".ogg": "audio/ogg",
+    }
+    
+    mime_type = manual_mimes.get(ext)
     if not mime_type:
-        mime_type = "application/octet-stream"
+        mime_type, _ = mimetypes.guess_type(filename)
+        if not mime_type:
+            mime_type = "application/octet-stream"
 
     try:
         res = supabase.storage.from_(config.SUPABASE_STORAGE_BUCKET).upload(
