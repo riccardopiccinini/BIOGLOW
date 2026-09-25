@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useRouter } from "next/router";
 import useSWR from "swr";
 import Layout from "../../components/Layout";
@@ -16,39 +17,46 @@ export default function ObservationDetail() {
   );
 
   const updateStatus = async (newStatus) => {
-    console.log("DEBUG: Inizio aggiornamento stato per ID:", id, "Nuovo stato:", newStatus);
+    if (!obs) return;
+
+    // OTTIMISTIC UPDATE: aggiorniamo l'interfaccia immediatamente
+    const optimisticData = { ...obs, verification_status: newStatus };
+    
     try {
-      console.log("DEBUG: Richiesta sessione a Supabase...");
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        console.log("DEBUG: Nessuna sessione trovata. Redirect al login.");
         router.push("/login");
         return;
       }
 
-      console.log("DEBUG: Sessione trovata, invio richiesta PATCH al backend...");
-      const response = await fetch(`/observations/${id}`, {
-        method: "PATCH",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}` 
+      // Aggiorniamo SWR in modo ottimistico
+      // mutate(data, { optimisticData, rollbackOnError: true })
+      await mutate(
+        async () => {
+          const response = await fetch(`/observations/${id}`, {
+            method: "PATCH",
+            headers: { 
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${session.access_token}` 
+            },
+            body: JSON.stringify({ verification_status: newStatus }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Errore durante l'aggiornamento");
+          }
+          return optimisticData;
         },
-        body: JSON.stringify({ verification_status: newStatus }),
-      });
-
-      console.log("DEBUG: Risposta dal backend:", response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("DEBUG: Errore API:", errorData);
-        throw new Error(errorData.detail || "Errore durante l'aggiornamento");
-      }
-
-      console.log("DEBUG: Aggiornamento riuscito. Ricarico dati...");
-      await mutate();
+        {
+          optimisticData: optimisticData,
+          rollbackOnError: true,
+          populateCache: true,
+          revalidate: false
+        }
+      );
     } catch (e) {
-      console.error("DEBUG: Eccezione catturata:", e);
       alert(e.message || "Errore durante l'aggiornamento dello stato");
     }
   };
