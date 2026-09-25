@@ -6,7 +6,7 @@ import { SPECIES_CATEGORIES } from "../../lib/constants";
 
 export default function SpeciesIndex() {
   const router = useRouter();
-  const { data, error } = useSWR("/observations", jsonFetcher);
+  const { data, error } = useSWR("/observations?limit=1000", jsonFetcher);
 
   if (error) return <Layout><ErrorDisplay message="Errore nel caricamento delle specie" /></Layout>;
   if (!data) return <Layout><LoadingDisplay message="Caricamento dati..." /></Layout>;
