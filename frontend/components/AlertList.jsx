@@ -4,12 +4,6 @@ import useSWR from "swr";
 import { jsonFetcher, buildFilterParams } from "../lib/utils";
 import { ALERT_TYPES, VERIFICATION_STATUS } from "../lib/constants";
 
-const MOCK_ALERTS = [
-  { id: "1", species: "Lontra europea", alert_type: "protected", status: "confirmed" },
-  { id: "2", species: "Nuotatore Gigante", alert_type: "invasive", status: "pending" },
-  { id: "3", species: "Gambero della Louisiana", alert_type: "invasive", status: "confirmed" },
-];
-
 export default function AlertList({ statusFilter = "" }) {
   const [expanded, setExpanded] = useState(false);
   const router = useRouter();
@@ -20,14 +14,15 @@ export default function AlertList({ statusFilter = "" }) {
     jsonFetcher
   );
 
-  const alertsData = (data && Array.isArray(data) && data.length > 0) ? data : MOCK_ALERTS;
+  // Now we only use real data from the server. No more mocks.
+  const alertsData = (data && Array.isArray(data)) ? data : [];
 
   // Filter: only protected and invasive
   const filteredAlerts = alertsData.filter(a => a.alert_type === 'protected' || a.alert_type === 'invasive');
   const alerts = filteredAlerts.slice(0, expanded ? 20 : 5);
 
   if (error) return <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-red-500 transition-colors">Errore nel caricamento degli alert</div>;
-  if (!data && !MOCK_ALERTS) return <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-gray-500 dark:text-gray-400 transition-colors">Caricamento dati...</div>;
+  if (!data) return <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-gray-500 dark:text-gray-400 transition-colors">Caricamento dati...</div>;
 
   const getAlertTypeStyle = (type) => {
     if (type === 'protected') return "bg-blue-600 text-white";
