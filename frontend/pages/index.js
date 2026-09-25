@@ -44,58 +44,13 @@ export default function Home() {
     );
   };
 
-  const exportToCSV = async () => {
-    try {
-      const params = buildFilterParams(filters, { limit: "10000" });
-      const response = await fetcher(`/observations?${params.toString()}`);
-      
-      if (!response || !Array.isArray(response)) {
-        throw new Error("Nessun dato disponibile per l'esportazione");
-      }
-      const csvContent = convertToCSV(response);
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      const timestamp = new Date().toISOString().slice(0, 19).replace(/[:]/g, "-");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `biodiversita_report_${timestamp}.csv`);
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error("Export error:", error);
-      alert(`Errore durante l'esportazione: ${error.message}`);
-    }
-  };
-
   const downloadPDF = () => {
-    // Costruiamo l'URL per il report. Passiamo solo la stazione se è selezionata.
     const stationId = filters.station;
     const url = stationId 
       ? `/reports/summary?station_id=${stationId}` 
       : `/reports/summary`;
     
-    // Apriamo l'URL in una nuova scheda per far partire il download del PDF
     window.open(url, "_blank");
-  };
-
-  const convertToCSV = (objArray) => {
-    if (!objArray || !Array.isArray(objArray) || objArray.length === 0) {
-      return "";
-    }
-    const keys = [...new Set(objArray.flatMap(Object.keys))];
-    const header = keys.map(key => `"${key}"`).join(",");
-    const rows = objArray.map(obj => {
-      return keys.map(key => {
-        const value = obj[key];
-        if (value === null || value === undefined) return '';
-        if (typeof value === 'string') return `"${value.replace(/"/g, '""')}"`;
-        if (typeof value === 'object') return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
-        return `"${value}"`;
-      }).join(",");
-    });
-    return [header, ...rows].join("\n");
   };
 
   const { data: stats, error: statsError } = useSWR(
@@ -144,14 +99,7 @@ export default function Home() {
               </p>
             </div>
             
-            <div className="mt-4 space-y-3">
-              <button
-                onClick={exportToCSV}
-                className="w-full bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition flex items-center justify-center gap-2"
-              >
-                <span className="w-4 h-4">📥</span>
-                Esporta dati (CSV)
-              </button>
+            <div className="mt-4">
               <button
                 onClick={downloadPDF}
                 className="w-full bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition flex items-center justify-center gap-2"
