@@ -1,6 +1,6 @@
 from fpdf import FPDF
 from datetime import datetime
-from db import get_stats, get_observations, get_station_detail
+from db import get_stats, get_observations, get_station_detail, get_alerts
 from biodiversity import shannon_index, compute_shannon_time_series
 import asyncio
 
@@ -46,6 +46,13 @@ async def generate_summary_pdf(station_id=None):
             species_list = [{"species": sp, "count": cnt} for sp, cnt in species_counts.items()]
             filters = {"station_id": None, "method": None, "start": None, "end": None}
 
+        # Recupero Alert
+        alerts = await get_alerts()
+        if station_id:
+            # Filtriamo gli alert per mostrare solo quelli relativi a specie presenti in questa stazione
+            station_species = {sp.get("species") for sp in species_list}
+            alerts = [a for a in alerts if a.get("species") in station_species]
+
     except Exception as e:
         raise Exception(f"Errore nel recupero dati: {str(e)}")
 
@@ -75,8 +82,27 @@ async def generate_summary_pdf(station_id=None):
     pdf.cell(0, 8, f"Indice di Biodiversità (Shannon): {shannon_val:.2f}", ln=True)
     pdf.ln(10)
     
-    # --- SEZIONE 2: Andamento Temporale (Sostituisce il grafico Shannon Line Chart) ---
+    # --- SEZIONE 2: Specie di Interesse / Alert ---
     pdf.set_font("helvetica", "B", 14)
+    pdf.set_text_color(180, 0, 0) # Rosso per gli alert
+    pdf.cell(0, 10, "Specie di Interesse e Alert", ln=True)
+    pdf.ln(5)
+    
+    pdf.set_font("helvetica", "", 10)
+    pdf.set_text_color(0, 0, 0)
+    if alerts:
+        for alert in alerts[-10:]: # Ultimi 10 alert
+            a_type = alert.get("alert_type", "info").upper()
+            species = alert.get("species", "Sconosciuta")
+            status = alert.get("status", "pending")
+            pdf.cell(0, 8, f"[{a_type}] {species} - Stato: {status}", ln=True)
+    else:
+        pdf.cell(0, 10, "Nessun alert attivo per specie di interesse.", ln=True)
+    pdf.ln(10)
+    
+    # --- SEZIONE 3: Andamento Temporale ---
+    pdf.set_font("helvetica", "B", 14)
+    pdf.set_text_color(0, 0, 0)
     pdf.cell(0, 10, "Andamento Indice di Shannon (Mensile)", ln=True)
     pdf.ln(5)
     
@@ -96,7 +122,7 @@ async def generate_summary_pdf(station_id=None):
         pdf.cell(0, 10, "Nessun dato temporale disponibile.", ln=True)
     pdf.ln(10)
     
-    # --- SEZIONE 3: Distribuzione Specie (Species Distribution Chart) ---
+    # --- SEZIONE 4: Distribuzione Specie ---
     pdf.set_font("helvetica", "B", 14)
     pdf.cell(0, 10, "Distribuzione Specie", ln=True)
     pdf.ln(5)
@@ -122,7 +148,7 @@ async def generate_summary_pdf(station_id=None):
     
     pdf.ln(10)
     
-    # --- SEZIONE 4: Dettaglio Osservazioni (Observation List) ---
+    # --- SEZIONE 5: Dettaglio Osservazioni ---
     if pdf.get_y() > 200:
         pdf.add_page()
 
