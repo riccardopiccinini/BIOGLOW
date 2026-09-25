@@ -24,8 +24,8 @@ export default function MethodDistributionChart({ filters }) {
   });
 
   const chartData = [
-    { name: "Audio", value: counts.audio, color: OBSERVATION_METHODS.audio.color },
-    { name: "Foto", value: counts.image, color: OBSERVATION_METHODS.image.color },
+    { name: "Audio", value: counts.audio, color: OBSERVATION_METHODS.audio.chartColor },
+    { name: "Foto", value: counts.image, color: OBSERVATION_METHODS.image.chartColor },
   ];
 
   return (

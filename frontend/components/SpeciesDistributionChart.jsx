@@ -2,9 +2,27 @@ import useSWR from "swr";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 import { useRouter } from "next/router";
 import { jsonFetcher, buildFilterParams } from "../lib/utils";
-import { CHART_COLORS } from "../lib/constants";
+import { CHART_COLORS, SPECIES_CATEGORIES } from "../lib/constants";
 
 export default function SpeciesDistributionChart({ filters }) {
+  const [speciesRef, setSpeciesRef] = useState({});
+  const [loadingRef, setLoadingRef] = useState(true);
+  const [errorRef, setErrorRef] = useState(null);
+
+  // Load species reference
+  useEffect(() => {
+    setLoadingRef(true);
+    jsonFetcher("/docs/species_reference.json")
+      .then((data) => {
+        setSpeciesRef(data);
+        setLoadingRef(false);
+      })
+      .catch((err) => {
+        console.warn("Failed to load species reference:", err);
+        setSpeciesRef({ rare: [], protected: [], invasive: [] });
+        setLoadingRef(false);
+      });
+  }, []);
   const router = useRouter();
   const params = buildFilterParams(filters, { limit: "1000" });
 
@@ -15,16 +33,31 @@ export default function SpeciesDistributionChart({ filters }) {
 
   if (error) return <div className="bg-white rounded-lg shadow-md p-6 text-red-500">Errore nel caricamento della distribuzione</div>;
   if (!data || !Array.isArray(data)) return <div className="bg-white rounded-lg shadow-md p-6 text-gray-500">Caricamento dati...</div>;
-
+  
   const counts = {};
+  const speciesCategories = {}; // To track category for each species
   data.forEach((obs) => {
     const sp = obs.species || "Sconosciuta";
     counts[sp] = (counts[sp] || 0) + 1;
+    
+    // Determine category from species reference
+    let category = "normal";
+    if (speciesRef.rare?.includes(sp)) category = "rare";
+    else if (speciesRef.protected?.includes(sp)) category = "protected";
+    else if (speciesRef.invasive?.includes(sp)) category = "invasive";
+    
+    speciesCategories[sp] = category;
   });
+
+  // Convert counts to chart data array
   const chartData = Object.entries(counts).map(([species, count]) => ({
     species,
     count,
+    category: speciesCategories[species] || "normal"
   }));
+
+  // Sort by count descending
+  chartData.sort((a, b) => b.count - a.count);
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -45,7 +78,7 @@ export default function SpeciesDistributionChart({ filters }) {
             contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "8px" }}
             content={({ active, payload }) => {
               if (!active || !payload || payload.length === 0) return null;
-              const { species, count } = payload[0].payload;
+              const { species, count, category } = payload[0].payload;
               return (
                 <div
                   className="flex flex-col items-start gap-2"
@@ -54,11 +87,24 @@ export default function SpeciesDistributionChart({ filters }) {
                 >
                   <div className="font-medium">{species}</div>
                   <div className="text-sm text-muted">{count} osservazioni</div>
+                  {!loadingRef && speciesRef[category] && (
+                    <div className="text-xs text-muted">
+                      Categoria: {SPECIES_CATEGORIES[category]?.label || category}
+                    </div>
+                  )}
                 </div>
               );
             }}
           />
-          <Bar dataKey="count" fill={CHART_COLORS.success} radius={[0, 4, 4, 0]} />
+          <Bar 
+            dataKey="count" 
+            fill={(bar) => {
+              const category = bar.data.category || 'normal';
+              const categoryConfig = SPECIES_CATEGORIES[category] || SPECIES_CATEGORIES.normal;
+              return categoryConfig.chartColor;
+            }} 
+            radius={[0, 4, 4, 0]} 
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>

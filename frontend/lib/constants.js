@@ -36,21 +36,17 @@ export const VERIFICATION_STATUS = {
 export const ALERT_TYPES = {
   protected: {
     label: "Protetta",
+    chartColor: "#3498db",
     color: "bg-blue-100 text-blue-800",
     borderColor: "border-blue-200",
     bgColor: "bg-blue-50",
   },
   invasive: {
     label: "Invasiva",
+    chartColor: "#e74c3c",
     color: "bg-red-100 text-red-800",
     borderColor: "border-red-200",
     bgColor: "bg-red-50",
-  },
-  rare: {
-    label: "Rara",
-    color: "bg-purple-100 text-purple-800",
-    borderColor: "border-purple-200",
-    bgColor: "bg-purple-50",
   },
 };
 
@@ -60,21 +56,26 @@ export const ALERT_TYPES = {
 export const SPECIES_CATEGORIES = {
   rare: {
     label: "Rara",
+    chartColor: "#9b59b6",
     color: "bg-purple-100 text-purple-800",
     description: "Specie rara o minacciata",
   },
   protected: {
     label: "Protetta",
+    chartColor: "#3498db",
     color: "bg-blue-100 text-blue-800",
     description: "Specie protetta per legge",
   },
   invasive: {
     label: "Invasiva",
+    chartColor: "#e74c3c",
     color: "bg-red-100 text-red-800",
+    borderColor: "border-red-200",
     description: "Specie invasiva aliena",
   },
   normal: {
     label: "Normale",
+    chartColor: "#95a5a6",
     color: "bg-gray-100 text-gray-800",
     description: "Specie comune",
   },
@@ -88,6 +89,7 @@ export const OBSERVATION_METHODS = {
     label: "Foto",
     icon: "image",
     color: "bg-green-500",
+    chartColor: "#10b981",
     bgColor: "bg-green-50",
     borderColor: "border-green-100",
   },
@@ -95,6 +97,7 @@ export const OBSERVATION_METHODS = {
     label: "Audio",
     icon: "music",
     color: "bg-blue-500",
+    chartColor: "#3b82f6",
     bgColor: "bg-blue-50",
     borderColor: "border-blue-100",
   },
