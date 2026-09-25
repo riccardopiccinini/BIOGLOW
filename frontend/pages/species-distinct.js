@@ -93,9 +93,10 @@ export default function SpeciesDistinct() {
     .sort((a, b) => b.total - a.total); // sort by total count descending
 
   // Apply category filter
+  // When "all" is selected, show only protected and invasive species (hide rare and normal)
   const filteredSpecies =
     filterCategory === "all"
-      ? speciesList
+      ? speciesList.filter(s => s.category === 'protected' || s.category === 'invasive')
       : filterCategory === "normal"
       ? speciesList.filter((s) => s.category === "normal")
       : speciesList.filter((s) => s.category === filterCategory);
