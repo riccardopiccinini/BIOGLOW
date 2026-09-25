@@ -9,6 +9,13 @@ CONFIDENCE_THRESHOLDS = {
     "min_acceptable": 0.70,
 }
 
+# Configurazione Alert per il backend (necessaria per alerts.py)
+ALERT_TYPES = {
+    "protected": {"label": "Protetta"},
+    "invasive": {"label": "Invasiva"},
+    "rare": {"label": "Rara"},
+}
+
 # Mock species for fallback/testing (comuni in zona Secchia)
 MOCK_SPECIES_IMAGES = [
     {"species": "Passer domesticus", "confidence": 0.92, "source": "iNaturalist (mock)"},
