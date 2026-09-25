@@ -107,7 +107,7 @@ export default function ObservationDetail() {
                 <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                   <div
                     className="bg-success h-full transition-all duration-500"
-                    style={{ width: f"{(obs.confidence ?? 0) * 100}%" }}
+                    style={{ width: `${(obs.confidence ?? 0) * 100}%` }}
                   />
                 </div>
               </div>
@@ -140,7 +140,7 @@ export default function ObservationDetail() {
                   onClick={() => updateStatus(key)}
                   className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
                     obs.verification_status === key
-                    ? f"border-{config.color.split('-')[1]} shadow-inner {config.color} text-white"
+                    ? `border-${config.color.split('-')[1]} shadow-inner ${config.color} text-white`
                     : "border-gray-100 hover:border-primary text-gray-600 hover:bg-gray-50"
                   }`}
                 >
