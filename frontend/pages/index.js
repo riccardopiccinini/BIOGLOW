@@ -21,7 +21,6 @@ export default function Home() {
     endDate: "",
   });
 
-  // Sync filters with query params on mount and on route change
   useEffect(() => {
     const { station, method, startDate, endDate } = router.query;
     setFilters({
@@ -32,7 +31,6 @@ export default function Home() {
     });
   }, [router.query]);
 
-  // Update URL when filters change (shallow push to preserve state)
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
     const params = buildFilterParams(newFilters);
@@ -46,21 +44,16 @@ export default function Home() {
     );
   };
 
-  // Function to export data as CSV
   const exportToCSV = async () => {
     try {
-      // Fetch observations data with current filters
-      const params = buildFilterParams(filters, { limit: "10000" }); // Higher limit for export
+      const params = buildFilterParams(filters, { limit: "10000" });
       const response = await fetcher(`/observations?${params.toString()}`);
       
       if (!response || !Array.isArray(response)) {
         throw new Error("Nessun dato disponibile per l'esportazione");
       }
 
-      // Convert to CSV
       const csvContent = convertToCSV(response);
-      
-      // Create download link
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -77,30 +70,21 @@ export default function Home() {
     }
   };
 
-  // Convert array of objects to CSV string
   const convertToCSV = (objArray) => {
     if (!objArray || !Array.isArray(objArray) || objArray.length === 0) {
       return "";
     }
-
-    // Get all unique keys from all objects
     const keys = [...new Set(objArray.flatMap(Object.keys))];
-    
-    // Create header
     const header = keys.map(key => `"${key}"`).join(",");
-    
-    // Create rows
     const rows = objArray.map(obj => {
       return keys.map(key => {
         const value = obj[key];
-        // Handle different value types
         if (value === null || value === undefined) return '';
         if (typeof value === 'string') return `"${value.replace(/"/g, '""')}"`;
         if (typeof value === 'object') return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
         return `"${value}"`;
       }).join(",");
     });
-    
     return [header, ...rows].join("\n");
   };
 
@@ -131,26 +115,25 @@ export default function Home() {
 
   return (
     <Layout>
-      <div className="flex flex-col lg:flex-row gap-6 p-4 lg:p-8 bg-gray-50 min-h-screen">
+      <div className="flex flex-col lg:flex-row gap-6 p-4 lg:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
 
         {/* SIDEBAR: Filtri e Controllo */}
         <aside className="w-full lg:w-80 shrink-0 space-y-6">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 sticky top-8">
-            <h2 className="text-xl font-bold text-primary mb-6 flex items-center gap-2">
-              <span className="w-2 h-6 bg-primary rounded-full"></span>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 sticky top-8 transition-colors">
+            <h2 className="text-xl font-bold text-primary dark:text-blue-400 mb-6 flex items-center gap-2">
+              <span className="w-2 h-6 bg-primary dark:bg-blue-500 rounded-full"></span>
               Filtri di Controllo
             </h2>
             <FilterBar
               value={filters}
               onFilterChange={handleFilterChange}
             />
-            <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
-              <p className="text-xs text-blue-700 leading-relaxed">
+            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800 transition-colors">
+              <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
                 I filtri aggiornano automaticamente tutti i grafici e le liste della dashboard.
               </p>
             </div>
             
-            {/* Export buttons */}
             <div className="mt-4">
               <button
                 onClick={exportToCSV}
@@ -169,10 +152,10 @@ export default function Home() {
           {/* HEADER */}
           <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
             <div>
-              <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Monitor Secchia Dashboard</h1>
-              <p className="text-muted">Analisi della biodiversità in tempo reale</p>
+              <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Monitor Secchia Dashboard</h1>
+              <p className="text-muted dark:text-gray-400">Analisi della biodiversità in tempo reale</p>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full text-xs font-bold animate-pulse">
+            <div className="flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-bold animate-pulse">
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>
               SISTEMA ATTIVO
             </div>
@@ -209,7 +192,7 @@ export default function Home() {
             </div>
           </section>
 
-          <footer className="mt-12 py-6 border-t border-gray-200 text-center text-sm text-muted">
+          <footer className="mt-12 py-6 border-t border-gray-200 dark:border-gray-700 text-center text-sm text-muted dark:text-gray-400">
             <p>Dashboard aggiornata in tempo reale · Dati: Supabase → Render → Vercel</p>
           </footer>
         </main>

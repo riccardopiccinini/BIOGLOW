@@ -14,13 +14,12 @@ export default function SpeciesDistinct() {
   const [loadingObs, setLoadingObs] = useState(true);
   const [errorObs, setErrorObs] = useState(null);
 
-  const [filterCategory, setFilterCategory] = useState("all"); // all, rare, protected, invasive, normal
-  const [searchTerm, setSearchTerm] = useState(""); // Search term for filtering species
-  const [expandedSpecies, setExpandedSpecies] = useState(new Set()); // Track expanded species
-  const [speciesObservations, setSpeciesObservations] = useState({}); // Store observations per species
-  const [loadingSpecies, setLoadingSpecies] = useState(new Set()); // Track loading state per species
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [expandedSpecies, setExpandedSpecies] = useState(new Set());
+  const [speciesObservations, setSpeciesObservations] = useState({});
+  const [loadingSpecies, setLoadingSpecies] = useState(new Set());
 
-  // Load species reference
   useEffect(() => {
     setLoadingRef(true);
     jsonFetcher("/docs/species_reference.json")
@@ -30,18 +29,16 @@ export default function SpeciesDistinct() {
       })
       .catch((err) => {
         console.warn("Failed to load species reference:", err);
-        setSpeciesRef({ rare: [], protected: [], invasive: [] }); // empty defaults
+        setSpeciesRef({ rare: [], protected: [], invasive: [] });
         setLoadingRef(false);
       });
   }, []);
 
-  // Load observations with SWR for better caching and performance
   const { data: swrObservations, error: swrError, isLoading: swrLoading } = useSWR(
     "/api/observations?limit=5000",
     fetcher
   );
 
-  // Update local state from SWR data
   useEffect(() => {
     if (swrLoading) {
       setLoadingObs(true);
@@ -75,7 +72,6 @@ export default function SpeciesDistinct() {
     );
   }
 
-  // Aggregate observations by species
   const speciesMap = new Map();
   observations.forEach((obs) => {
     const sp = obs.species;
@@ -87,10 +83,8 @@ export default function SpeciesDistinct() {
     speciesMap.set(sp, current);
   });
 
-  // Convert to array and add category
   const speciesList = Array.from(speciesMap.entries())
     .map(([species, counts]) => {
-      // Determine category from species_ref
       let category = "normal";
       if (speciesRef.rare?.includes(species)) category = "rare";
       else if (speciesRef.protected?.includes(species)) category = "protected";
@@ -102,10 +96,8 @@ export default function SpeciesDistinct() {
         category,
       };
     })
-    .sort((a, b) => b.total - a.total); // sort by total count descending
+    .sort((a, b) => b.total - a.total);
 
-  // Apply category filter
-  // When "all" is selected, show only protected and invasive species (hide rare and normal)
   let filteredByCategory =
     filterCategory === "all"
       ? speciesList.filter(s => s.category === 'protected' || s.category === 'invasive')
@@ -113,12 +105,10 @@ export default function SpeciesDistinct() {
       ? speciesList.filter((s) => s.category === "normal")
       : speciesList.filter((s) => s.category === filterCategory);
 
-  // Apply search filter
   const filteredSpecies = filteredByCategory.filter(species =>
     species.species.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Function to toggle expanded state
   const toggleExpanded = (species) => {
     setExpandedSpecies(prev => {
       const newSet = new Set(prev);
@@ -126,7 +116,6 @@ export default function SpeciesDistinct() {
         newSet.delete(species);
       } else {
         newSet.add(species);
-        // Fetch observations for this species when expanded
         setLoadingSpecies(prev => new Set([...prev, species]));
         fetcher(`/observations?species=${encodeURIComponent(species)}&limit=100`)
           .then((data) => {
@@ -147,18 +136,18 @@ export default function SpeciesDistinct() {
 
   return (
     <Layout>
-      <div className="p-6">
+      <div className="p-6 transition-colors duration-300">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-          <h1 className="text-2xl font-extrabold text-gray-900 md:text-3xl">
+          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white md:text-3xl">
             Elenco delle specie osservate
           </h1>
           <div className="flex items-center gap-4">
             <div className="flex flex-col md:flex-row gap-2">
-              <label className="text-sm font-medium text-muted">Filtra per categoria:</label>
+              <label className="text-sm font-medium text-muted dark:text-gray-400">Filtra per categoria:</label>
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
+                className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
               >
                 {SPECIES_FILTER_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -166,21 +155,21 @@ export default function SpeciesDistinct() {
               </select>
             </div>
             <div className="flex flex-col md:flex-row gap-2">
-              <label className="text-sm font-medium text-muted">Cerca specie:</label>
+              <label className="text-sm font-medium text-muted dark:text-gray-400">Cerca specie:</label>
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Nome specie..."
-                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
+                className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-md p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6 transition-colors">
           {filteredSpecies.length === 0 ? (
-            <p className="text-gray-500 text-center py-6">Nessuna specie trovata con i filtri selezionati</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center py-6">Nessuna specie trovata con i filtri selezionati</p>
           ) : (
             <div className="space-y-4">
               {filteredSpecies.map((sp) => {
@@ -189,11 +178,11 @@ export default function SpeciesDistinct() {
                 const categoryConfig = SPECIES_CATEGORIES[sp.category] || SPECIES_CATEGORIES.normal;
                 
                 return (
-                  <div key={sp.species} className="border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="flex items-center justify-between px-5 py-4 bg-gray-50 cursor-pointer" onClick={() => toggleExpanded(sp.species)}>
+                  <div key={sp.species} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden transition-colors">
+                    <div className="flex items-center justify-between px-5 py-4 bg-gray-50 dark:bg-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" onClick={() => toggleExpanded(sp.species)}>
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900">{sp.species}</p>
-                        <p className="text-sm text-muted">
+                        <p className="font-medium text-gray-900 dark:text-white">{sp.species}</p>
+                        <p className="text-sm text-muted dark:text-gray-400">
                           {sp.total} osservazioni totali
                         </p>
                       </div>
@@ -204,33 +193,32 @@ export default function SpeciesDistinct() {
                         <div className="flex gap-2 text-sm">
                           <span className="flex items-center gap-1">
                             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                            <span>{sp.image} foto</span>
+                            <span className="text-gray-600 dark:text-gray-300">{sp.image} foto</span>
                           </span>
                           <span className="flex items-center gap-1">
                             <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                            <span>{sp.audio} audio</span>
+                            <span className="text-gray-600 dark:text-gray-300">{sp.audio} audio</span>
                           </span>
                         </div>
                       </div>
-                      <span className="text-xs">
+                      <span className="text-xs text-muted dark:text-gray-400">
                         {isExpanded ? '▲' : '▼'}
                       </span>
                     </div>
-                    {/* Expandable observations list */}
                     {isExpanded && (
-                      <div className="border-t border-gray-200">
+                      <div className="border-t border-gray-200 dark:border-gray-700">
                         {isLoading ? (
-                          <div className="px-5 py-4 text-sm text-muted">
+                          <div className="px-5 py-4 text-sm text-muted dark:text-gray-400">
                             Caricamento osservazioni...
                           </div>
                         ) : (
                           <div className="px-5 py-4">
                             {(speciesObservations[sp.species] || []).length === 0 ? (
-                              <p className="text-gray-500 text-center py-2">Nessuna osservazione trovata</p>
+                              <p className="text-gray-500 dark:text-gray-400 text-center py-2">Nessuna osservazione trovata</p>
                             ) : (
                               <div className="space-y-2">
                                 {speciesObservations[sp.species].map((obs) => (
-                                  <div key={obs.id} className="flex items-start gap-3 p-2 bg-gray-50 rounded">
+                                  <div key={obs.id} className="flex items-start gap-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded transition-colors">
                                     {obs.method === "image" && obs.media_url ? (
                                       <img
                                         src={obs.media_url}
@@ -238,11 +226,11 @@ export default function SpeciesDistinct() {
                                         className="w-16 h-16 object-cover rounded"
                                       />
                                     ) : (
-                                      <LuMusic className="w-8 h-8 text-muted" />
+                                      <LuMusic className="w-8 h-8 text-muted dark:text-gray-400" />
                                     )}
                                     <div className="flex-1">
-                                      <p className="font-medium text-gray-900">{obs.species}</p>
-                                      <p className="text-sm text-muted">
+                                      <p className="font-medium text-gray-900 dark:text-white">{obs.species}</p>
+                                      <p className="text-sm text-muted dark:text-gray-400">
                                         {obs.method === "image" ? "Foto" : "Audio"} · 
                                         {new Date(obs.date_time).toLocaleString('it-IT', {
                                           day: '2-digit',
@@ -268,7 +256,7 @@ export default function SpeciesDistinct() {
           )}
         </div>
 
-        <div className="mt-8 pt-4 border-t border-gray-200 text-sm text-muted">
+        <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700 text-sm text-muted dark:text-gray-400">
           <p>
             Dati aggiornati in tempo reale · Fonte: osservazioni dal backend
           </p>
