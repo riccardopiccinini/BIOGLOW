@@ -14,10 +14,8 @@ export default function AlertList({ statusFilter = "" }) {
     jsonFetcher
   );
 
-  // Now we only use real data from the server. No more mocks.
   const alertsData = (data && Array.isArray(data)) ? data : [];
 
-  // Filter: only protected and invasive
   const filteredAlerts = alertsData.filter(a => a.alert_type === 'protected' || a.alert_type === 'invasive');
   const alerts = filteredAlerts.slice(0, expanded ? 20 : 5);
 

@@ -5,7 +5,7 @@ class ObservationMethod(str, Enum):
     AUDIO = "audio"
 
 CONFIDENCE_THRESHOLDS = {
-    "auto_confirm": 0.90,
+    "auto_confirm": 0.85,
     "min_acceptable": 0.70,
 }
 

@@ -35,7 +35,7 @@ export default function SpeciesDistinct() {
   }, []);
 
   const { data: swrObservations, error: swrError, isLoading: swrLoading } = useSWR(
-    "/api/observations?limit=5000",
+    "/api/observations?limit=1000",
     fetcher
   );
 
@@ -98,7 +98,10 @@ export default function SpeciesDistinct() {
     })
     .sort((a, b) => b.total - a.total);
 
-  let filteredByCategory = filterCategory === "all" ? speciesList : speciesList.filter((s) => s.category === filterCategory);
+  let filteredByCategory =
+    filterCategory === "all"
+      ? speciesList
+      : speciesList.filter((s) => s.category === filterCategory);
 
   const filteredSpecies = filteredByCategory.filter(species =>
     species.species.toLowerCase().includes(searchTerm.toLowerCase())
@@ -131,7 +134,7 @@ export default function SpeciesDistinct() {
 
   return (
     <Layout>
-      <div className="p-6 transition-colors duration-300">
+      <div className="flex flex-col gap-8 p-4 lg:p-8 bg-gray-50 min-h-screen">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white md:text-3xl">
             Elenco delle specie osservate

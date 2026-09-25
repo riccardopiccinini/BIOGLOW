@@ -18,7 +18,6 @@ try:
 except ImportError:
     BIRDNET_AVAILABLE = False
 
-# Global analyzer instance
 analyzer = None
 if BIRDNET_AVAILABLE:
     try:
@@ -35,7 +34,6 @@ async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -
     if not config.SUPABASE_STORAGE_BUCKET:
         return f"https://via.placeholder.com/400x300/2d6a4f/ffffff?text={filename}"
 
-    # Determine the correct MIME type based on extension
     mime_type, _ = mimetypes.guess_type(filename)
     if not mime_type:
         mime_type = "application/octet-stream"
