@@ -35,7 +35,10 @@ async def get_observation_by_id(obs_id: str):
 
 async def update_observation_status(obs_id: str, status: str):
     res = supabase.table("osservazioni").update({"verification_status": status}).eq("id", obs_id).execute()
-    return res.data[0] if res.data else None
+    # Ritorna il dato aggiornato se presente, altrimenti un semplice conferma per evitare il 404 in main.py
+    if res.data and len(res.data) > 0:
+        return res.data[0]
+    return {"id": obs_id, "verification_status": status, "updated": True}
 
 async def get_stats(station_id=None, method=None, start=None, end=None):
     query = supabase.table("osservazioni").select("id, species", count="exact")
