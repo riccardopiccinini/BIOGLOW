@@ -32,7 +32,7 @@ async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -
     path = f"stations/{station_id}/{file_id}{ext}"
 
     if not config.SUPABASE_STORAGE_BUCKET:
-        return f"https://via.placeholder.com/400x300/2d6a4f/ffffff?text={filename}"
+        raise Exception("SUPABASE_STORAGE_BUCKET non configurato nel server")
 
     # Explicit mapping for common project types to avoid application/octet-stream
     manual_mimes = {
@@ -57,11 +57,12 @@ async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -
             file_options={"content-type": mime_type}
         )
         if not res:
-            raise Exception("Failed to upload file to Supabase Storage")
+            raise Exception("Il server di Storage ha rifiutato l'upload (risposta vuota)")
         return supabase.storage.from_(config.SUPABASE_STORAGE_BUCKET).get_public_url(path)
     except Exception as e:
-        print(f"Storage upload error (mock fallback): {e}")
-        return f"https://via.placeholder.com/400x300/2d6a4f/ffffff?text={filename}"
+        # Rimuoviamo il fallback dell'immagine verde e rilanciamo l'errore vero
+        print(f"CRITICAL STORAGE ERROR: {e}")
+        raise e
 
 async def identify_image(file_path: Path) -> dict:
     if config.DEMO_MODE:
