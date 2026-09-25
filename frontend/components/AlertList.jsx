@@ -29,6 +29,12 @@ export default function AlertList({ statusFilter = "" }) {
   if (error) return <div className="bg-white rounded-lg shadow-md p-6 text-red-500">Errore nel caricamento degli alert</div>;
   if (!data && !MOCK_ALERTS) return <div className="bg-white rounded-lg shadow-md p-6 text-gray-500">Caricamento dati...</div>;
 
+  const getAlertTypeStyle = (type) => {
+    if (type === 'protected') return "bg-blue-600 text-white";
+    if (type === 'invasive') return "bg-red-600 text-white";
+    return "bg-gray-100 text-gray-700";
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
       <h2 className="text-lg font-semibold mb-4 text-primary">Alert specie di interesse</h2>
@@ -44,7 +50,7 @@ export default function AlertList({ statusFilter = "" }) {
           >
             <div>
               <p className="font-medium text-gray-900">{alert.species}</p>
-              <span className={`px-2 py-0.5 text-xs font-medium rounded ${ALERT_TYPES[alert.alert_type]?.color || "bg-gray-100 text-gray-700"}`}>
+              <span className={`px-2 py-0.5 text-xs font-bold rounded ${getAlertTypeStyle(alert.alert_type)}`}>
                 {ALERT_TYPES[alert.alert_type]?.label || alert.alert_type}
               </span>
             </div>

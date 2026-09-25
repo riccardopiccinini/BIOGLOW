@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import useSWR from "swr";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Cell } from "recharts";
 import { useRouter } from "next/router";
 import { jsonFetcher, buildFilterParams } from "../lib/utils";
 import { CHART_COLORS, SPECIES_CATEGORIES } from "../lib/constants";
@@ -10,7 +10,6 @@ export default function SpeciesDistributionChart({ filters }) {
   const [loadingRef, setLoadingRef] = useState(true);
   const [errorRef, setErrorRef] = useState(null);
 
-  // Load species reference
   useEffect(() => {
     setLoadingRef(true);
     jsonFetcher("/docs/species_reference.json")
@@ -36,12 +35,11 @@ export default function SpeciesDistributionChart({ filters }) {
   if (!data || !Array.isArray(data)) return <div className="bg-white rounded-lg shadow-md p-6 text-gray-500">Caricamento dati...</div>;
   
   const counts = {};
-  const speciesCategories = {}; // To track category for each species
+  const speciesCategories = {};
   data.forEach((obs) => {
     const sp = obs.species || "Sconosciuta";
     counts[sp] = (counts[sp] || 0) + 1;
     
-    // Determine category from species reference
     let category = "normal";
     if (speciesRef.rare?.includes(sp)) category = "rare";
     else if (speciesRef.protected?.includes(sp)) category = "protected";
@@ -50,14 +48,12 @@ export default function SpeciesDistributionChart({ filters }) {
     speciesCategories[sp] = category;
   });
 
-  // Convert counts to chart data array
   const chartData = Object.entries(counts).map(([species, count]) => ({
     species,
     count,
     category: speciesCategories[species] || "normal"
   }));
 
-  // Sort by count descending
   chartData.sort((a, b) => b.count - a.count);
 
   return (
@@ -88,7 +84,7 @@ export default function SpeciesDistributionChart({ filters }) {
                 >
                   <div className="font-medium">{species}</div>
                   <div className="text-sm text-muted">{count} osservazioni</div>
-                  {!loadingRef && speciesRef[category] && (
+                  {!loadingRef && (
                     <div className="text-xs text-muted">
                       Categoria: {SPECIES_CATEGORIES[category]?.label || category}
                     </div>
@@ -97,15 +93,14 @@ export default function SpeciesDistributionChart({ filters }) {
               );
             }}
           />
-          <Bar 
-            dataKey="count" 
-            fill={(bar) => {
-              const category = bar.data.category || 'normal';
-              const categoryConfig = SPECIES_CATEGORIES[category] || SPECIES_CATEGORIES.normal;
-              return categoryConfig.chartColor;
-            }} 
-            radius={[0, 4, 4, 0]} 
-          />
+          <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+            {chartData.map((entry, index) => (
+              <Cell 
+                key={`cell-${index}`} 
+                fill={SPECIES_CATEGORIES[entry.category]?.chartColor || SPECIES_CATEGORIES.normal.chartColor} 
+              />
+            ))}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>
