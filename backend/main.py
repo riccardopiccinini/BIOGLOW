@@ -1,9 +1,10 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Header, Depends
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Header, Depends, Form
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional
+from typing import Optional, List
 import os
 import io
+import json
 from pathlib import Path
 from datetime import datetime, timezone
 from supabase import create_client
@@ -19,7 +20,8 @@ from db import (
     get_alerts, 
     get_stations, 
     get_station_detail,
-    station_exists
+    station_exists,
+    save_observation
 )
 from biodiversity import compute_shannon_time_series, compute_shannon_time_series_detail, shannon_index
 from alerts import check_and_create_alert
@@ -167,19 +169,11 @@ async def get_station(station_id: str):
         raise HTTPException(status_code=404, detail="Stazione non trovata")
     return detail
 
-@app.post("/observations")
-async def receive_observation(
-    file: UploadFile = File(...),
-    method: str = "image",
-    station_id: str = Query(...), # Rimosso default, ora obbligatorio per coerenza DB
-    date_time: Optional[str] = None
-):
-    if not await station_exists(station_id):
-        raise HTTPException(status_code=400, detail=f"Stazione {station_id} non valida o non censita nel DB")
-
-    tmp_path = Path(f"/tmp/{file.filename}")
+async def process_single_observation(file_bytes, filename, method, station_id, date_time):
+    """Helper to process a single observation to reuse in single and batch endpoints."""
+    tmp_path = Path(f"/tmp/{filename}")
     with open(tmp_path, "wb") as f:
-        f.write(await file.read())
+        f.write(file_bytes)
 
     if method == "image":
         result = await identify_image(tmp_path)
@@ -188,10 +182,8 @@ async def receive_observation(
     else:
         raise HTTPException(status_code=400, detail="Metodo non supportato")
 
-    with open(tmp_path, "rb") as f:
-        media_url = await upload_to_storage(f.read(), file.filename, station_id)
+    media_url = await upload_to_storage(file_bytes, filename, station_id)
 
-    # Filtri di confidenza dinamici
     confidence = result.get("confidence", 0.0) if result else 0.0
     species = result.get("species", "Sconosciuta") if result else "Sconosciuta"
     
@@ -202,7 +194,6 @@ async def receive_observation(
     else:
         verification_status = "excluded"
 
-    # Gestione date dinamica (se non fornita, usa l'ora corrente UTC)
     observation = {
         "species": species,
         "method": method,
@@ -213,18 +204,77 @@ async def receive_observation(
         "date_time": date_time or datetime.now(timezone.utc).isoformat()
     }
 
-    from db import save_observation
     save_res = await save_observation(observation)
-
     if save_res and save_res.data and len(save_res.data) > 0:
         obs_data = save_res.data[0]
         if obs_data:
             obs_id = obs_data.get("id")
             if obs_id:
                 await check_and_create_alert({**observation, "id": obs_id})
-                return JSONResponse(content={"observation_id": obs_id, "species": species, "confidence": confidence})
+                return {"observation_id": obs_id, "species": species, "confidence": confidence}
 
+    return None
+
+@app.post("/observations")
+async def receive_observation(
+    file: UploadFile = File(...),
+    method: str = "image",
+    station_id: str = Query(...),
+    date_time: Optional[str] = None
+):
+    if not await station_exists(station_id):
+        raise HTTPException(status_code=400, detail=f"Stazione {station_id} non valida")
+
+    res = await process_single_observation(
+        await file.read(), 
+        file.filename, 
+        method, 
+        station_id, 
+        date_time
+    )
+    
+    if res:
+        return JSONResponse(content=res)
+    
     raise HTTPException(status_code=500, detail="Errore nel salvataggio dell'osservazione")
+
+@app.post("/observations/batch")
+async def receive_observations_batch(
+    station_id: str = Query(...),
+    batch_data: str = Form(...) # Expects a JSON string with list of {filename, method, date_time, content_base64}
+):
+    """
+    Endpoint for offline queue: allows uploading multiple observations stored on the station.
+    batch_data should be a JSON list of observation details.
+    """
+    if not await station_exists(station_id):
+        raise HTTPException(status_code=400, detail=f"Stazione {station_id} non valida")
+
+    try:
+        observations_list = json.loads(batch_data)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Formato batch_data non valido")
+
+    results = []
+    for obs in observations_list:
+        try:
+            # In a real scenario, files might be sent in a separate multipart request or as base64 in batch_data
+            # For this implementation, we expect base64 content if provided, or we simulate it
+            import base64
+            content = base64.b64decode(obs.get("content_base64", " ")) if "content_base64" in obs else b"dummy data"
+            
+            res = await process_single_observation(
+                content, 
+                obs.get("filename", "unknown"), 
+                obs.get("method", "image"), 
+                station_id, 
+                obs.get("date_time")
+            )
+            results.append({"status": "success", "result": res})
+        except Exception as e:
+            results.append({"status": "error", "error": str(e)})
+
+    return JSONResponse(content={"processed": len(observations_list), "results": results})
 
 @app.get("/reports/summary")
 async def get_summary_report(station_id: Optional[str] = None):

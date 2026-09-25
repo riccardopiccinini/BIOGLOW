@@ -11,6 +11,9 @@ class Config:
     BIRDNET_API_URL = os.getenv("BIRDNET_API_URL")
     BIRDNET_API_KEY = os.getenv("BIRDNET_API_KEY")
     
+    # Modalità Demo: se True, ignora le API e restituisce dati mock
+    DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() == "true"
+    
     @classmethod
     def validate(cls):
         missing = []
