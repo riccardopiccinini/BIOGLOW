@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import useSWR from "swr";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 import { useRouter } from "next/router";
 import { jsonFetcher, buildFilterParams } from "../lib/utils";
 import { CHART_COLORS, SPECIES_CATEGORIES } from "../lib/constants";
@@ -72,7 +72,13 @@ export default function SpeciesDistributionChart({ filters }) {
             width={120}
           />
           <Tooltip
-            contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "8px" }}
+            contentStyle={{ 
+              backgroundColor: "#fff", 
+              border: "2px solid #cbd5e1", 
+              borderRadius: "8px", 
+              padding: "12px",
+              boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" 
+            }}
             content={({ active, payload }) => {
               if (!active || !payload || payload.length === 0) return null;
               const { species, count, category } = payload[0].payload;
@@ -82,10 +88,10 @@ export default function SpeciesDistributionChart({ filters }) {
                   onClick={() => router.push(`/species/${encodeURIComponent(species)}`)}
                   style={{ cursor: "pointer", userSelect: "none" }}
                 >
-                  <div className="font-medium">{species}</div>
+                  <div className="font-bold text-gray-900">{species}</div>
                   <div className="text-sm text-muted">{count} osservazioni</div>
                   {!loadingRef && (
-                    <div className="text-xs text-muted">
+                    <div className="text-xs font-medium text-primary">
                       Categoria: {SPECIES_CATEGORIES[category]?.label || category}
                     </div>
                   )}
@@ -93,14 +99,11 @@ export default function SpeciesDistributionChart({ filters }) {
               );
             }}
           />
-          <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-            {chartData.map((entry, index) => (
-              <Cell 
-                key={`cell-${index}`} 
-                fill={SPECIES_CATEGORIES[entry.category]?.chartColor || SPECIES_CATEGORIES.normal.chartColor} 
-              />
-            ))}
-          </Bar>
+          <Bar 
+            dataKey="count" 
+            fill="#27ae60" 
+            radius={[0, 4, 4, 0]} 
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>
