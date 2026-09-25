@@ -98,12 +98,7 @@ export default function SpeciesDistinct() {
     })
     .sort((a, b) => b.total - a.total);
 
-  let filteredByCategory =
-    filterCategory === "all"
-      ? speciesList.filter(s => s.category === 'protected' || s.category === 'invasive')
-      : filterCategory === "normal"
-      ? speciesList.filter((s) => s.category === "normal")
-      : speciesList.filter((s) => s.category === filterCategory);
+  let filteredByCategory = filterCategory === "all" ? speciesList : speciesList.filter((s) => s.category === filterCategory);
 
   const filteredSpecies = filteredByCategory.filter(species =>
     species.species.toLowerCase().includes(searchTerm.toLowerCase())
