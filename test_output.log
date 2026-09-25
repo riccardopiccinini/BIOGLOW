@@ -1,0 +1,86 @@
+
+--- Processing Photos ---
+Processing image: Erithacus_rubecula_with_cocked_head.jpg...
+iNaturalist error: 0
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing Erithacus_rubecula_with_cocked_head.jpg: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing image: 1280px-Myocastor_coypus_-_ragondin.jpg...
+iNaturalist error: 0
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing 1280px-Myocastor_coypus_-_ragondin.jpg: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing image: Ardea_cinerea_EM1A2714_(27349354381).jpg...
+iNaturalist error: 0
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing Ardea_cinerea_EM1A2714_(27349354381).jpg: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing image: Portrait_of_a_red_fox_in_Rautas_fjällurskog_(cropped).jpg...
+iNaturalist error: 0
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing Portrait_of_a_red_fox_in_Rautas_fjällurskog_(cropped).jpg: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing image: 1280px-Male_mallard3.jpg...
+iNaturalist error: 
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing 1280px-Male_mallard3.jpg: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing image: Alcedo_Atthis.jpg...
+iNaturalist error: 0
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing Alcedo_Atthis.jpg: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+
+--- Processing Audio ---
+Processing audio: XC979273 - European Robin - Erithacus rubecula.mp3...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC979273 - European Robin - Erithacus rubecula.mp3: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC367080 - Coypu - Myocastor coypus.mp3...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC367080 - Coypu - Myocastor coypus.mp3: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC1178157 - Grey Heron - Ardea cinerea.wav...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC1178157 - Grey Heron - Ardea cinerea.wav: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC1068232 - Coypu - Myocastor coypus.wav...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC1068232 - Coypu - Myocastor coypus.wav: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC1181305 - European Robin - Erithacus rubecula.wav...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC1181305 - European Robin - Erithacus rubecula.wav: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC1077517 - Red Fox - Vulpes vulpes.wav...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC1077517 - Red Fox - Vulpes vulpes.wav: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC1059134 - Coypu - Myocastor coypus.mp3...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC1059134 - Coypu - Myocastor coypus.mp3: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC1178087 - Grey Heron - Ardea cinerea.wav...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC1178087 - Grey Heron - Ardea cinerea.wav: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC1105620 - Red Fox - Vulpes vulpes.mp3...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC1105620 - Red Fox - Vulpes vulpes.mp3: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC1105478 - Coypu - Myocastor coypus.wav...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC1105478 - Coypu - Myocastor coypus.wav: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC1180792 - Mallard - Anas platyrhynchos.wav...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC1180792 - Mallard - Anas platyrhynchos.wav: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC1180928 - Common Kingfisher - Alcedo atthis.wav...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC1180928 - Common Kingfisher - Alcedo atthis.wav: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC1178085 - Mallard - Anas platyrhynchos.wav...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC1178085 - Mallard - Anas platyrhynchos.wav: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC1073742 - Red Fox - Vulpes vulpes.wav...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC1073742 - Red Fox - Vulpes vulpes.wav: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC1179538 - Grey Heron - Ardea cinerea.wav...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC1179538 - Grey Heron - Ardea cinerea.wav: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC1180911 - Common Kingfisher - Alcedo atthis.wav...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC1180911 - Common Kingfisher - Alcedo atthis.wav: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC1152299 - European Robin - Erithacus rubecula.wav...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC1152299 - European Robin - Erithacus rubecula.wav: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC1180895 - Common Kingfisher - Alcedo atthis.wav...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC1180895 - Common Kingfisher - Alcedo atthis.wav: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+Processing audio: XC1147355 - Mallard - Anas platyrhynchos.mp3...
+Storage upload error (mock fallback): {'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}
+  -> Error processing XC1147355 - Mallard - Anas platyrhynchos.mp3: {'message': 'new row violates row-level security policy for table "osservazioni"', 'code': '42501', 'hint': None, 'details': None}
+
