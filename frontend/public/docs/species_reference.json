@@ -1,38 +1,38 @@
 {
   "rare": [
-    "Austropotamobius pallipes", // Gambero di fiume (White-clawed crayfish)
-    "Zingel zingel", // Lasca italiana (Italian zingel)
-    "Cobitis taenia", // Spinarello (Stone loach)
-    "Sabanejewia larvata", // Cobite italiano (Italian brook loach)
-    "Lutra lutra", // Lutra (European otter)
-    "Emys orbicularis", // Testuggine palustre europea (European pond turtle)
-    "Bombina pachypus", // Ululone appenninico (Apennine yellow-bellied toad)
-    "Triturus carnifex", // Tritone crestato italiano (Italian crested newt)
-    "Salmo marmoratus", // Trota marmorata (Marble trout)
-    "Thymallus thymallus" // Temolo (Grayling)
+    "Austropotamobius pallipes",
+    "Zingel zingel",
+    "Cobitis taenia",
+    "Sabanejewia larvata",
+    "Lutra lutra",
+    "Emys orbicularis",
+    "Bombina pachypus",
+    "Triturus carnifex",
+    "Salmo marmoratus",
+    "Thymallus thymallus"
   ],
   "protected": [
-    "Lutra lutra", // Lutra (European otter) - also in rare
-    "Emys orbicularis", // Testuggine palustre europea (European pond turtle) - also in rare
-    "Bombina pachypus", // Ululone appenninico (Apennine yellow-bellied toad) - also in rare
-    "Triturus carnifex", // Tritone crestato italiano (Italian crested newt) - also in rare
-    "Aquila chrysaetos", // Aquila reale (Golden eagle)
-    "Circaetus gallicus", // Biancone (Short-toed snake eagle)
-    "Milvus migrans", // Nibbio bruno (Black kite)
-    "Ardea purpurea", // Airone rosso (Purple heron)
-    "Nycticorax nycticorax", // Nitticora (Black-crowned night heron)
-    "Ciconia ciconia" // Cicogna bianca (White stork)
+    "Lutra lutra",
+    "Emys orbicularis",
+    "Bombina pachypus",
+    "Triturus carnifex",
+    "Aquila chrysaetos",
+    "Circaetus gallicus",
+    "Milvus migrans",
+    "Ardea purpurea",
+    "Nycticorax nycticorax",
+    "Ciconia ciconia"
   ],
   "invasive": [
-    "Procambarus clarkii", // Gambero della Louisiana (Louisiana crayfish)
-    "Orconectes limosus", // Gambero della Pennsylvania (Spiny-cheek crayfish)
-    "Erythroculter erythropterus", // Pesce rosso asiatico (Asian redfin culter)
-    "Carassius gibelio", // Carassio dorato (Prussian carp)
-    "Pseudorasbora parva", // Pesce topo (Stone moroko)
-    "Lepomis gibbosus", // Pesce sole (Pumpkinseed)
-    "Micropterus salmoides", // Persico trota (Largemouth bass)
-    "Sander lucioperca", // Lucioperca (Zander)
-    "Dreissena polymorpha", // Mitiglia zebra (Zebra mussel)
-    "Orconectes virilis" // Gambero della Virginia (Virile crayfish)
+    "Procambarus clarkii",
+    "Orconectes limosus",
+    "Erythroculter erythropterus",
+    "Carassius gibelio",
+    "Pseudorasbora parva",
+    "Lepomis gibbosus",
+    "Micropterus salmoides",
+    "Sander lucioperca",
+    "Dreissena polymorpha",
+    "Orconectes virilis"
   ]
 }
