@@ -4,7 +4,7 @@ import Layout from "../components/Layout";
 import { fetcher, formatDate, formatConfidence } from "../lib/utils";
 import { supabase } from "../lib/supabase";
 import { useRouter } from "next/router";
-import { LuCheck, LuX, LuAlertCircle } from "react-icons/lu";
+import { LuCheck, LuX, LuTriangleAlert } from "react-icons/lu";
 
 export default function AdminPanel() {
   const router = useRouter();
@@ -79,7 +79,7 @@ export default function AdminPanel() {
 
         {!observations || observations.length === 0 ? (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-12 text-center border border-gray-100 dark:border-gray-700 transition-colors">
-            <LuAlertCircle className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <LuTriangleAlert className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Tutto pulito!</h2>
             <p className="text-muted dark:text-gray-400">Non ci sono osservazioni in attesa di validazione.</p>
           </div>
