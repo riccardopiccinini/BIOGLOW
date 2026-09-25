@@ -37,12 +37,15 @@ export default function StationMap() {
   const getPosition = (lat, lng, bounds) => {
     const { minLat, maxLat, minLng, maxLng } = bounds;
     
-    // Evita divisione per zero se tutte le stazioni sono nello stesso punto
     const latRange = maxLat - minLat || 0.01;
     const lngRange = maxLng - minLng || 0.01;
 
-    const x = ((lng - minLng) / lngRange) * 100;
-    const y = ((maxLat - lat) / latRange) * 100;
+    // Aggiungiamo un padding del 10% per evitare che i pallini tocchino i bordi
+    const padding = 10; 
+    const availableRange = 100 - (padding * 2);
+
+    const x = padding + ((lng - minLng) / lngRange) * availableRange;
+    const y = padding + ((maxLat - lat) / latRange) * availableRange;
     
     return { x: `${x}%`, y: `${y}%` };
   };
@@ -73,7 +76,6 @@ export default function StationMap() {
     );
   }
 
-  // CALCOLO BOUNDS DINAMICI
   const bounds = stations.length > 0 
     ? {
         minLat: Math.min(...stations.map(s => s.lat)),
