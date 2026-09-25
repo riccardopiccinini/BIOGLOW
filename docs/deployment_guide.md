@@ -1,57 +1,43 @@
 # Deployment Guide for Monitor Secchia
 
 ## Backend (FastAPI)
-1. **Set environment variables** in your deployment environment (Render, Railway, etc.):
-   - `SUPABASE_URL`
-   - `SUPABASE_KEY`
-   - `INATURALIST_TOKEN`
-   - `BIRDNET_API`
+1. **Set environment variables** in your deployment environment (Render):
+   - `SUPABASE_URL`: Project URL of Supabase.
+   - `SUPABASE_KEY`: Anon public key of Supabase.
+   - `INATURALIST_TOKEN`: Token for iNaturalist API.
+   - `DEMO_MODE`: Set to `true` to force mock results, `false` for real AI identification.
 2. **Install dependencies**:
    ```bash
-   pip install -r requirements.txt
+   pip install -r backend/requirements.txt
    ```
-3. **Run the app** (Render will use `uvicorn`):
+3. **Run the app**:
    ```bash
    uvicorn backend.main:app --host 0.0.0.0 --port $PORT
    ```
-   - Ensure the `$PORT` variable is provided by the platform.
 
 ## Frontend (Next.js)
-1. **Set environment variables** (optional, for API URL):
-   - `NEXT_PUBLIC_BACKEND_URL` – URL of the FastAPI service.
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-3. **Deploy to Vercel**:
+1. **Set environment variables** in Vercel:
+   - `NEXT_PUBLIC_BACKEND_URL`: URL of the FastAPI service on Render.
+2. **Deploy to Vercel**:
    - Connect the GitHub repository.
-   - In Vercel dashboard, add the `NEXT_PUBLIC_BACKEND_URL` under Environment Variables.
+   - Add the environment variables in the dashboard.
    - Deploy the project.
 
 ## Supabase
-1. **Create a new project** at https://supabase.com.
-2. **Run the SQL schema** located at `docs/database_schema.sql` in the Supabase SQL editor.
-3. **Enable `REST` and `Realtime`** if you want live updates on the dashboard.
-4. **Copy the `anon` public API key** and the project URL – they will be used as `SUPABASE_KEY` and `SUPABASE_URL`.
+1. **Project Setup**: Create a project at https://supabase.com.
+2. **Database**: Run the SQL schema found in `docs/database_schema.sql` in the Supabase SQL Editor.
+3. **Storage**: Create a bucket named `observations` (or as specified in `SUPABASE_STORAGE_BUCKET`) and set it to public.
 
 ## ESP32 Station
-1. Install the Arduino IDE or PlatformIO.
-2. Add the ESP32 board manager (`https://raw.githubusercontent.com/espressif/arduino-esp32/gh‑pages/package_esp32_index.json`).
-3. Open `hardware/esp32_sketch.ino`.
-4. Fill in your Wi‑Fi credentials and the backend URL.
-5. Compile and upload to the ESP32.
+1. **Tools**: Install Arduino IDE or PlatformIO.
+2. **Board**: Add ESP32 board support via Board Manager.
+3. **Configuration**: Open `hardware/esp32_sketch.ino`, update Wi-Fi credentials and the backend endpoint URL.
+4. **Deployment**: Upload the sketch to the ESP32.
+5. **Offline Queue**: Ensure the ESP32 logic implements the `/observations/batch` endpoint to avoid data loss during Wi-Fi outages.
 
-## Demo Mode
-- Run the demo script to preload mock data:
-  ```bash
-  python -m backend.demo
-  ```
-- The dashboard will now display the pre‑filled observations even without a live ESP32.
-
-## Monitoring & Logs
-- Backend logs can be viewed in Render’s dashboard.
-- Supabase provides query logs and realtime replication status.
-- The ESP32 prints connection status to the serial console.
+## Demo & Validation
+- **Demo Mode**: To ensure a flawless presentation, set `DEMO_MODE=true` on the backend. This bypasses network-dependent AI calls and uses internal mock data.
+- **Accuracy Tests**: Run `python backend/test_accuracy.py` to validate the current identification accuracy of the system.
 
 ---
-**Note**: Replace placeholder values with your actual credentials before deploying.
+**Note**: Use a `.env` file for local development and the platform's dashboard for production credentials.
