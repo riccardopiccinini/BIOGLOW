@@ -10,11 +10,7 @@ import MethodDistributionChart from "../components/MethodDistributionChart";
 import ObservationList from "../components/ObservationList";
 import AlertList from "../components/AlertList";
 import StationMap from "../components/StationMap";
-
-const fetcher = (url) => fetch(url).then((r) => {
-  if (!r.ok) throw new Error("API error");
-  return r.json();
-});
+import { fetcher, buildFilterParams, ErrorDisplay, LoadingDisplay } from "../lib/utils";
 
 export default function Home() {
   const router = useRouter();
@@ -39,16 +35,11 @@ export default function Home() {
   // Update URL when filters change (shallow push to preserve state)
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
-    const { station, method, startDate, endDate } = newFilters;
-    const params = {};
-    if (station) params.station = station;
-    if (method) params.method = method;
-    if (startDate) params.startDate = startDate;
-    if (endDate) params.endDate = endDate;
+    const params = buildFilterParams(newFilters);
     router.push(
       {
         pathname: router.pathname,
-        query: params,
+        query: Object.fromEntries(params),
       },
       undefined,
       { shallow: true }
@@ -64,14 +55,10 @@ export default function Home() {
   if (statsError) {
     return (
       <Layout>
-        <div className="flex items-center justify-center min-h-screen p-4">
-          <div className="bg-white p-8 rounded-2xl shadow-xl border border-red-100 text-center max-w-md">
-            <div className="text-red-500 text-5xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Errore di Connessione</h2>
-            <p className="text-muted mb-6">Impossibile recuperare i dati dal server. Verifica che il backend su Render sia attivo.</p>
-            <button onClick={() => window.location.reload()} className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-dark transition">Riprova</button>
-          </div>
-        </div>
+        <ErrorDisplay
+          message="Impossibile recuperare i dati dal server. Verifica che il backend su Render sia attivo."
+          onRetry={() => window.location.reload()}
+        />
       </Layout>
     );
   }
@@ -79,12 +66,7 @@ export default function Home() {
   if (!stats) {
     return (
       <Layout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-lg text-muted animate-pulse">Caricamento dati...</p>
-          </div>
-        </div>
+        <LoadingDisplay message="Caricamento dati..." />
       </Layout>
     );
   }
@@ -139,7 +121,7 @@ export default function Home() {
           {/* ZONE 2: Visual Analysis (Charts) */}
           <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <div className="space-y-6">
-              <ShannonLineChart interval="month" />
+              <ShannonLineChart interval="month" filters={filters} />
               <MethodDistributionChart filters={filters} />
             </div>
             <div className="space-y-6">

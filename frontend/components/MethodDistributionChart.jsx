@@ -2,19 +2,12 @@ import useSWR from "swr";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { useRouter } from "next/router";
 import { LuMusic, LuImage } from "react-icons/lu";
-
-const fetcher = (url) => fetch(url).then((r) => {
-  if (!r.ok) throw new Error("API error");
-  return r.json();
-});
+import { fetcher, buildFilterParams, getMethodLabel } from "../lib/utils";
+import { CHART_COLORS, OBSERVATION_METHODS } from "../lib/constants";
 
 export default function MethodDistributionChart({ filters }) {
   const router = useRouter();
-  const params = new URLSearchParams();
-  if (filters.station) params.append("station_id", filters.station);
-  if (filters.startDate) params.append("start", filters.startDate);
-  if (filters.endDate) params.append("end", filters.endDate);
-  params.append("limit", "1000");
+  const params = buildFilterParams(filters, { limit: "1000" });
 
   const { data, error } = useSWR(
     `/observations?${params.toString()}`,
@@ -31,8 +24,8 @@ export default function MethodDistributionChart({ filters }) {
   });
 
   const chartData = [
-    { name: "Audio", value: counts.audio, color: "#3498db" },
-    { name: "Foto", value: counts.image, color: "#2ecc71" },
+    { name: "Audio", value: counts.audio, color: OBSERVATION_METHODS.audio.color },
+    { name: "Foto", value: counts.image, color: OBSERVATION_METHODS.image.color },
   ];
 
   return (
@@ -76,14 +69,14 @@ export default function MethodDistributionChart({ filters }) {
       </ResponsiveContainer>
 
       <div className="mt-6 flex flex-wrap justify-center gap-4">
-        <button 
+        <button
           onClick={() => router.push("/method/audio")}
           className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition shadow-sm"
         >
           <LuMusic className="w-4 h-4" />
           Vedi tutti gli Audio
         </button>
-        <button 
+        <button
           onClick={() => router.push("/method/image")}
           className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition shadow-sm"
         >

@@ -5,8 +5,7 @@ import StatsCard from "../../components/StatsCard";
 import ShannonLineChart from "../../components/ShannonLineChart";
 import SpeciesDistributionChart from "../../components/SpeciesDistributionChart";
 import ObservationList from "../../components/ObservationList";
-
-const fetcher = (url) => fetch(url).then((r) => r.json());
+import { fetcher, ErrorDisplay, LoadingDisplay } from "../../lib/utils";
 
 export default function StationDetail() {
   const router = useRouter();
@@ -17,9 +16,9 @@ export default function StationDetail() {
     fetcher
   );
 
-  if (!id) return <Layout><div className="p-8">Caricamento dati...ti...</div></Layout>;
-  if (error) return <Layout><div className="p-8 text-red-500">Errore nel caricamento dei dati della stazione</div></Layout>;
-  if (!stats) return <Layout><div className="p-8">Caricamento dati...</div></Layout>;
+  if (!id) return <Layout><LoadingDisplay message="Caricamento dati..." /></Layout>;
+  if (error) return <Layout><ErrorDisplay message="Errore nel caricamento dei dati della stazione" /></Layout>;
+  if (!stats) return <Layout><LoadingDisplay message="Caricamento dati..." /></Layout>;
 
   const filters = { station: id, method: "", startDate: "", endDate: "" };
 
@@ -27,8 +26,8 @@ export default function StationDetail() {
     <Layout>
       <div className="flex flex-col gap-8 p-4 lg:p-8 bg-gray-50 min-h-screen">
         <header className="flex items-center gap-4">
-          <button 
-            onClick={() => router.back()} 
+          <button
+            onClick={() => router.back()}
             className="p-2 hover:bg-gray-200 rounded-full transition"
           >
             ← Torna alla Dashboard

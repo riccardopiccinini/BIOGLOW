@@ -6,11 +6,7 @@ import StatsCard from "../../components/StatsCard";
 import ShannonLineChart from "../../components/ShannonLineChart";
 import ObservationList from "../../components/ObservationList";
 import SpeciesDistributionChart from "../../components/SpeciesDistributionChart";
-
-const fetcher = (url) => fetch(url).then((r) => {
-  if (!r.ok) throw new Error("API error");
-  return r.json();
-});
+import { fetcher, ErrorDisplay, LoadingDisplay } from "../../lib/utils";
 
 export default function StationDetail() {
   const router = useRouter();
@@ -42,12 +38,7 @@ export default function StationDetail() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-lg text-muted animate-pulse">Caricamento dettagli stazione...</p>
-          </div>
-        </div>
+        <LoadingDisplay message="Caricamento dettagli stazione..." />
       </Layout>
     );
   }
@@ -55,14 +46,10 @@ export default function StationDetail() {
   if (error) {
     return (
       <Layout>
-        <div className="flex items-center justify-center min-h-screen p-4">
-          <div className="bg-white p-8 rounded-2xl shadow-xl border border-red-100 text-center max-w-md">
-            <div className="text-red-500 text-5xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Stazione non trovata</h2>
-            <p className="text-muted mb-6">La stazione richiesta non esiste o è stata rimossa.</p>
-            <button onClick={() => router.push("/")} className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-dark transition">Torna alla dashboard</button>
-          </div>
-        </div>
+        <ErrorDisplay
+          message="La stazione richiesta non esiste o è stata rimossa."
+          onRetry={() => router.push("/")}
+        />
       </Layout>
     );
   }

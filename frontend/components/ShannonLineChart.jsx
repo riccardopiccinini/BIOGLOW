@@ -1,19 +1,10 @@
 import useSWR from "swr";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
-import { format } from "date-fns";
-
-const fetcher = (url) => fetch(url).then((r) => {
-  if (!r.ok) throw new Error("API error");
-  return r.json();
-});
+import { formatShortDate, fetcher, buildFilterParams } from "../lib/utils";
+import { CHART_COLORS, CHART_DEFAULTS } from "../lib/constants";
 
 export default function ShannonLineChart({ interval = "month", filters = {} }) {
-  const params = new URLSearchParams();
-  params.append("interval", interval);
-  if (filters.station) params.append("station_id", filters.station);
-  if (filters.method) params.append("method", filters.method);
-  if (filters.startDate) params.append("start", filters.startDate);
-  if (filters.endDate) params.append("end", filters.endDate);
+  const params = buildFilterParams(filters, { interval });
 
   const { data, error } = useSWR(
     `/observations/shannon-time?${params.toString()}`,
@@ -25,7 +16,7 @@ export default function ShannonLineChart({ interval = "month", filters = {} }) {
 
   // data atteso: [{ date: "2026-09-01T00:00:00Z", value: 1.23 }, ...]
   const chartData = data.map((d) => ({
-    date: d.date ? format(new Date(d.date), "dd MMM") : "N/A",
+    date: d.date ? formatShortDate(d.date) : "N/A",
     value: d.value ?? 0,
   }));
 
@@ -46,9 +37,9 @@ export default function ShannonLineChart({ interval = "month", filters = {} }) {
           <Line
             type="monotone"
             dataKey="value"
-            stroke="#3498db"
+            stroke={CHART_COLORS.primary}
             strokeWidth={2}
-            dot={{ fill: "#3498db", strokeWidth: 2, r: 4 }}
+            dot={{ fill: CHART_COLORS.primary, strokeWidth: 2, r: 4 }}
             activeDot={{ r: 6 }}
           />
         </LineChart>

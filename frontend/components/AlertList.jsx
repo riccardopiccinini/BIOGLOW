@@ -1,30 +1,8 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import useSWR from "swr";
-
-const fetcher = (url) => fetch(url).then((r) => r.json());
-
-const typeLabels = {
-  protected: "Protetta",
-  invasive: "Invasiva",
-};
-
-const statusStyles = {
-  confirmed: "bg-success text-white",
-  excluded: "bg-danger text-white",
-  pending: "bg-warning text-white",
-};
-
-const statusLabels = {
-  confirmed: "Confermata",
-  excluded: "Esclusa",
-  pending: "In attesa",
-};
-
-const typeColors = {
-  protected: "bg-blue-100 text-blue-800",
-  invasive: "bg-red-100 text-red-800",
-};
+import { jsonFetcher, buildFilterParams } from "../lib/utils";
+import { ALERT_TYPES, VERIFICATION_STATUS } from "../lib/constants";
 
 const MOCK_ALERTS = [
   { id: "1", species: "Lontra europea", alert_type: "protected", status: "confirmed" },
@@ -35,16 +13,15 @@ const MOCK_ALERTS = [
 export default function AlertList({ statusFilter = "" }) {
   const [expanded, setExpanded] = useState(false);
   const router = useRouter();
-  const params = new URLSearchParams();
-  if (statusFilter) params.append("status", statusFilter);
+  const params = buildFilterParams({}, { status: statusFilter });
 
   const { data, error } = useSWR(
     `/alerts?${params.toString()}`,
-    fetcher
+    jsonFetcher
   );
 
   const alertsData = (data && Array.isArray(data) && data.length > 0) ? data : MOCK_ALERTS;
-  
+
   // Filter: only protected and invasive
   const filteredAlerts = alertsData.filter(a => a.alert_type === 'protected' || a.alert_type === 'invasive');
   const alerts = filteredAlerts.slice(0, expanded ? 20 : 5);
@@ -60,19 +37,19 @@ export default function AlertList({ statusFilter = "" }) {
       )}
       <div className="space-y-3">
         {alerts.map((alert) => (
-          <div 
-            key={alert.id} 
+          <div
+            key={alert.id}
             onClick={() => router.push(`/species/${encodeURIComponent(alert.species)}`)}
             className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:shadow-md transition cursor-pointer"
           >
             <div>
               <p className="font-medium text-gray-900">{alert.species}</p>
-              <span className={`px-2 py-0.5 text-xs font-medium rounded ${typeColors[alert.alert_type] || "bg-gray-100 text-gray-700"}`}>
-                {typeLabels[alert.alert_type] || alert.alert_type}
+              <span className={`px-2 py-0.5 text-xs font-medium rounded ${ALERT_TYPES[alert.alert_type]?.color || "bg-gray-100 text-gray-700"}`}>
+                {ALERT_TYPES[alert.alert_type]?.label || alert.alert_type}
               </span>
             </div>
-            <span className={`px-3 py-1 text-xs font-medium rounded ${statusStyles[alert.status] || "bg-muted text-white"}`}>
-              {statusLabels[alert.status] || "Sconosciuto"}
+            <span className={`px-3 py-1 text-xs font-medium rounded ${VERIFICATION_STATUS[alert.status]?.color || "bg-muted text-white"}`}>
+              {VERIFICATION_STATUS[alert.status]?.label || "Sconosciuto"}
             </span>
           </div>
         ))}

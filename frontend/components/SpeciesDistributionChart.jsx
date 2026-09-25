@@ -1,21 +1,16 @@
 import useSWR from "swr";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 import { useRouter } from "next/router";
-
-const fetcher = (url) => fetch(url).then((r) => r.json());
+import { jsonFetcher, buildFilterParams } from "../lib/utils";
+import { CHART_COLORS } from "../lib/constants";
 
 export default function SpeciesDistributionChart({ filters }) {
   const router = useRouter();
-  const params = new URLSearchParams();
-  if (filters.station) params.append("station_id", filters.station);
-  if (filters.method) params.append("method", filters.method);
-  if (filters.startDate) params.append("start", filters.startDate);
-  if (filters.endDate) params.append("end", filters.endDate);
-  params.append("limit", "1000");
+  const params = buildFilterParams(filters, { limit: "1000" });
 
   const { data, error } = useSWR(
     `/observations?${params.toString()}`,
-    fetcher
+    jsonFetcher
   );
 
   if (error) return <div className="bg-white rounded-lg shadow-md p-6 text-red-500">Errore nel caricamento della distribuzione</div>;
@@ -63,7 +58,7 @@ export default function SpeciesDistributionChart({ filters }) {
               );
             }}
           />
-          <Bar dataKey="count" fill="#27ae60" radius={[0, 4, 4, 0]} />
+          <Bar dataKey="count" fill={CHART_COLORS.success} radius={[0, 4, 4, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

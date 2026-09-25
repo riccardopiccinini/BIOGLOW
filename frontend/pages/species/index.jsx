@@ -1,21 +1,15 @@
 import { useRouter } from "next/router";
 import useSWR from "swr";
 import Layout from "../../components/Layout";
-
-const fetcher = (url) => fetch(url).then((r) => r.json());
-
-const SPECIES_CATEGORIES = {
-  "Lontra europea": { type: "protetta", label: "Da Proteggere", color: "bg-blue-100 text-blue-800" },
-  "Cinghiale": { type: "normale", label: "Normale", color: "bg-gray-100 text-gray-800" },
-  "Specie Invasiva X": { type: "pericolosa", label: "Pericolosa", color: "bg-red-100 text-red-800" },
-};
+import { jsonFetcher, ErrorDisplay, LoadingDisplay } from "../../lib/utils";
+import { SPECIES_CATEGORIES } from "../../lib/constants";
 
 export default function SpeciesIndex() {
   const router = useRouter();
-  const { data, error } = useSWR("/observations", fetcher);
+  const { data, error } = useSWR("/observations", jsonFetcher);
 
-  if (error) return <Layout><div className="p-8 text-red-500">Errore nel caricamento delle specie</div></Layout>;
-  if (!data) return <Layout><div className="p-8">Caricamento dati...</div></Layout>;
+  if (error) return <Layout><ErrorDisplay message="Errore nel caricamento delle specie" /></Layout>;
+  if (!data) return <Layout><LoadingDisplay message="Caricamento dati..." /></Layout>;
 
   const distinctSpecies = [...new Set(data.map(obs => obs.species))].filter(Boolean);
 
@@ -23,8 +17,8 @@ export default function SpeciesIndex() {
     <Layout>
       <div className="flex flex-col gap-8 p-4 lg:p-8 bg-gray-50 min-h-screen">
         <header className="flex items-center gap-4">
-          <button 
-            onClick={() => router.back()} 
+          <button
+            onClick={() => router.back()}
             className="p-2 hover:bg-gray-200 rounded-full transition"
           >
             ← Torna alla Dashboard
@@ -36,9 +30,16 @@ export default function SpeciesIndex() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {distinctSpecies.map(species => {
-            const cat = SPECIES_CATEGORIES[species] || { type: "normale", label: "Normale", color: "bg-gray-100 text-gray-800" };
+            // Determine category from species name
+            let category = "normal";
+            const speciesRef = window.SPECIES_REF || {};
+            if (speciesRef.rare?.includes(species)) category = "rare";
+            else if (speciesRef.protected?.includes(species)) category = "protected";
+            else if (speciesRef.invasive?.includes(species)) category = "invasive";
+
+            const cat = SPECIES_CATEGORIES[category] || SPECIES_CATEGORIES.normal;
             return (
-              <div 
+              <div
                 key={species}
                 onClick={() => router.push(`/species/${encodeURIComponent(species)}`)}
                 className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:border-primary cursor-pointer transition-all hover:shadow-md group"

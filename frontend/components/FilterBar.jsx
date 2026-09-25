@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { buildFilterParams, METHOD_FILTER_OPTIONS } from "../lib/utils";
+import { VERIFICATION_STATUS } from "../lib/constants";
 
 export default function FilterBar({ value, onFilterChange }) {
   const [formValues, setFormValues] = useState(value);
@@ -7,6 +9,10 @@ export default function FilterBar({ value, onFilterChange }) {
   useEffect(() => {
     setFormValues(value);
   }, [value]);
+
+  const handleChange = (field, value) => {
+    setFormValues((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -24,7 +30,7 @@ export default function FilterBar({ value, onFilterChange }) {
           <input
             type="text"
             value={formValues.station}
-            onChange={(e) => setFormValues({ ...formValues, station: e.target.value })}
+            onChange={(e) => handleChange("station", e.target.value)}
             placeholder="es. SECCHIA-01"
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none"
           />
@@ -35,12 +41,12 @@ export default function FilterBar({ value, onFilterChange }) {
           <label className="block text-sm font-medium text-muted mb-1">Metodo</label>
           <select
             value={formValues.method}
-            onChange={(e) => setFormValues({ ...formValues, method: e.target.value })}
+            onChange={(e) => handleChange("method", e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none"
           >
-            <option value="">Tutti</option>
-            <option value="image">Foto</option>
-            <option value="audio">Audio</option>
+            {METHOD_FILTER_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
           </select>
         </div>
 
@@ -50,7 +56,7 @@ export default function FilterBar({ value, onFilterChange }) {
           <input
             type="date"
             value={formValues.startDate}
-            onChange={(e) => setFormValues({ ...formValues, startDate: e.target.value })}
+            onChange={(e) => handleChange("startDate", e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none"
           />
         </div>
@@ -61,7 +67,7 @@ export default function FilterBar({ value, onFilterChange }) {
           <input
             type="date"
             value={formValues.endDate}
-            onChange={(e) => setFormValues({ ...formValues, endDate: e.target.value })}
+            onChange={(e) => handleChange("endDate", e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none"
           />
         </div>

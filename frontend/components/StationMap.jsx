@@ -1,5 +1,6 @@
 import React from 'react';
 import { useRouter } from 'next/router';
+import { STATION_STATUS } from "../lib/constants";
 
 export default function StationMap() {
   const router = useRouter();
@@ -10,14 +11,7 @@ export default function StationMap() {
     { id: 'SECCHIA-03', name: 'Stazione Sud', index: 1.10, status: 'basso', x: '80%', y: '70%' },
   ];
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'alto': return 'bg-success';
-      case 'medio': return 'bg-warning';
-      case 'basso': return 'bg-danger';
-      default: return 'bg-gray-400';
-    }
-  };
+  const getStatusConfig = (status) => STATION_STATUS[status] || STATION_STATUS.basso;
 
   const handleStationClick = (id) => {
     // Fixed path: /station/ instead of /stations/ to match the folder structure
@@ -32,32 +26,32 @@ export default function StationMap() {
           <span className="text-blue-400 font-bold text-xl uppercase tracking-widest">Mappa Area Secchia</span>
         </div>
 
-        {stations.map((s) => (
-          <div
-            key={s.id}
-            className="absolute group cursor-pointer"
-            style={{ left: s.x, top: s.y }}
-            onClick={() => handleStationClick(s.id)}
-          >
-            <div className={`w-4 h-4 rounded-full ${getStatusColor(s.status)} ring-4 ring-white shadow-sm transition-transform hover:scale-150`} />
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-              <div className="bg-gray-900 text-white text-xs py-1 px-2 rounded shadow-lg">
-                <strong>{s.id}</strong>: {s.index}
+        {stations.map((s) => {
+          const statusConfig = getStatusConfig(s.status);
+          return (
+            <div
+              key={s.id}
+              className="absolute group cursor-pointer"
+              style={{ left: s.x, top: s.y }}
+              onClick={() => handleStationClick(s.id)}
+            >
+              <div className={`w-4 h-4 rounded-full ${statusConfig.color} ring-4 ring-white shadow-sm transition-transform hover:scale-150`} />
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                <div className="bg-gray-900 text-white text-xs py-1 px-2 rounded shadow-lg">
+                  <strong>{s.id}</strong>: {s.index}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <div className="mt-4 flex justify-center gap-4 text-xs text-muted">
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-full bg-success" /> Biodiversità Alta
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-full bg-warning" /> Biodiversità Media
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-full bg-danger" /> Biodiversità Bassa
-        </div>
+        {Object.entries(STATION_STATUS).map(([key, config]) => (
+          <div key={key} className="flex items-center gap-1">
+            <div className={`w-3 h-3 rounded-full ${config.color}`} />
+            {config.label}
+          </div>
+        ))}
       </div>
     </div>
   );

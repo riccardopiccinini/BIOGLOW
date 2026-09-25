@@ -6,11 +6,7 @@ import ObservationList from "../../components/ObservationList";
 import StatsCard from "../../components/StatsCard";
 import ShannonLineChart from "../../components/ShannonLineChart";
 import SpeciesDistributionChart from "../../components/SpeciesDistributionChart";
-
-const fetcher = (url) => fetch(url).then((r) => {
-  if (!r.ok) throw new Error("API error");
-  return r.json();
-});
+import { fetcher, ErrorDisplay, LoadingDisplay, getMethodLabel } from "../../lib/utils";
 
 export default function ObservationsByMethod() {
   const router = useRouter();
@@ -37,12 +33,7 @@ export default function ObservationsByMethod() {
   if (loadingStats) {
     return (
       <Layout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-lg text-muted animate-pulse">Caricamento statistiche...</p>
-          </div>
-        </div>
+        <LoadingDisplay message="Caricamento statistiche..." />
       </Layout>
     );
   }
@@ -50,19 +41,15 @@ export default function ObservationsByMethod() {
   if (errorStats) {
     return (
       <Layout>
-        <div className="flex items-center justify-center min-h-screen p-4">
-          <div className="bg-white p-8 rounded-2xl shadow-xl border border-red-100 text-center max-w-md">
-            <div className="text-red-500 text-5xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Errore di caricamento</h2>
-            <p className="text-muted mb-6">{errorStats}</p>
-            <button onClick={() => router.push("/")} className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-dark transition">Torna alla dashboard</button>
-          </div>
-        </div>
+        <ErrorDisplay
+          message={errorStats}
+          onRetry={() => router.push("/")}
+        />
       </Layout>
     );
   }
 
-  const methodLabel = method === "image" ? "Foto" : method === "audio" ? "Audio" : method;
+  const methodLabel = getMethodLabel(method);
 
   return (
     <Layout>
