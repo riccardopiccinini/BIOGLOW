@@ -1,55 +1,38 @@
-"""
-Shared constants for the Monitor Secchia Backend
-Centralizes configuration to avoid duplication across modules
-"""
+from enum import Enum
 
-# Verification status values
-VERIFICATION_STATUS = {
-    "confirmed": "Confermata",
-    "excluded": "Esclusa",
-    "pending": "In attesa",
+class ObservationMethod(str, Enum):
+    IMAGE = "image"
+    AUDIO = "audio"
+
+CONFIDENCE_THRESHOLDS = {
+    "auto_confirm": 0.90,
+    "min_acceptable": 0.70,
 }
 
-# Alert type values
-ALERT_TYPES = {
-    "protected": "Protetta",
-    "invasive": "Invasiva",
-    "rare": "Rara",
-}
+# Mock species for fallback/testing (comuni in zona Secchia)
+MOCK_SPECIES_IMAGES = [
+    {"species": "Passer domesticus", "confidence": 0.92, "source": "iNaturalist (mock)"},
+    {"species": "Turdus merula", "confidence": 0.87, "source": "iNaturalist (mock)"},
+    {"species": "Parus major", "confidence": 0.91, "source": "iNaturalist (mock)"},
+    {"species": "Erithacus rubecula", "confidence": 0.85, "source": "iNaturalist (mock)"},
+    {"species": "Fringilla coelebs", "confidence": 0.89, "source": "iNaturalist (mock)"},
+    {"species": "Sylvia atricapilla", "confidence": 0.83, "source": "iNaturalist (mock)"},
+    {"species": "Phylloscopus collybita", "confidence": 0.88, "source": "iNaturalist (mock)"},
+    {"species": "Motacilla alba", "confidence": 0.90, "source": "iNaturalist (mock)"},
+]
 
-# Observation methods
+MOCK_SPECIES_AUDIO = [
+    {"species": "Cuculus canorus", "confidence": 0.94, "source": "BirdNET (mock)"},
+    {"species": "Upupa epops", "confidence": 0.91, "source": "BirdNET (mock)"},
+    {"species": "Luscinia megarhynchos", "confidence": 0.89, "source": "BirdNET (mock)"},
+    {"species": "Oriolus oriolus", "confidence": 0.86, "source": "BirdNET (mock)"},
+    {"species": "Corvus corax", "confidence": 0.93, "source": "BirdNET (mock)"},
+    {"species": "Picus viridis", "confidence": 0.88, "source": "BirdNET (mock)"},
+    {"species": "Dendrocopos major", "confidence": 0.90, "source": "BirdNET (mock)"},
+    {"species": "Strix aluco", "confidence": 0.87, "source": "BirdNET (mock)"},
+]
+
 OBSERVATION_METHODS = {
     "image": "Foto",
-    "audio": "Audio",
-}
-
-# Confidence thresholds
-CONFIDENCE_THRESHOLDS = {
-    "auto_confirm": 0.85, # Above this, auto-confirmed
-    "min_acceptable": 0.60, # Below this, auto-excluded
-}
-
-# Station status thresholds (based on Shannon index)
-STATION_STATUS_THRESHOLDS = {
-    "alto": 2.0,      # Shannon > 2.0
-    "medio": 1.0,     # Shannon 1.0 - 2.0
-    "basso": 0.0,     # Shannon < 1.0
-}
-
-# Default pagination
-DEFAULT_PAGE_LIMIT = 10
-MAX_PAGE_LIMIT = 1000
-
-# Default date format
-DATE_FORMAT = "%Y-%m-%d"
-DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
-
-# Error messages
-ERROR_MESSAGES = {
-    "station_not_found": "Stazione non trovata",
-    "observation_not_found": "Osservazione non trovata",
-    "invalid_method": "Metodo non supportato",
-    "missing_verification_status": "Solo verification_status può essere aggiornato",
-    "save_failed": "Errore nel salvataggio dell'osservazione",
-    "db_connection_failed": "Connessione al database fallita",
+    "audio": "Audio"
 }
