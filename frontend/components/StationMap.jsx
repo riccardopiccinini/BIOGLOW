@@ -147,7 +147,7 @@ export default function StationMap() {
                       className="w-full bg-primary text-white px-3 py-1.5 rounded text-sm hover:bg-primary/90 transition"
                     >
                       Vai ai dettagli
-                    </div>
+                    </button>
                   </div>
                 </div>
               </div>
