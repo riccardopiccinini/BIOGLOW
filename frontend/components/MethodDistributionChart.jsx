@@ -1,6 +1,7 @@
 import useSWR from "swr";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { useRouter } from "next/router";
+import { LuMusic, LuImage } from "react-icons/lu";
 
 const fetcher = (url) => fetch(url).then((r) => {
   if (!r.ok) throw new Error("API error");
@@ -73,6 +74,23 @@ export default function MethodDistributionChart({ filters }) {
           <Legend />
         </PieChart>
       </ResponsiveContainer>
+
+      <div className="mt-6 flex flex-wrap justify-center gap-4">
+        <button 
+          onClick={() => router.push("/method/audio")}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition shadow-sm"
+        >
+          <LuMusic className="w-4 h-4" />
+          Vedi tutti gli Audio
+        </button>
+        <button 
+          onClick={() => router.push("/method/image")}
+          className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition shadow-sm"
+        >
+          <LuImage className="w-4 h-4" />
+          Vedi tutte le Foto
+        </button>
+      </div>
     </div>
   );
 }
