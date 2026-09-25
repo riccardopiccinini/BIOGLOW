@@ -1,20 +1,24 @@
 import { useState, useEffect, useRef } from "react";
-import { LuSun, LuMoon } from "react-icons/lu";
+import { LuSun, LuMoon, LuLogOut, LuUser } from "react-icons/lu";
+import { useRouter } from "next/router";
+import { supabase } from "../lib/supabase";
 
 export default function Layout({ children }) {
-  // Initialize state based on system preference and saved theme (sync to avoid flash)
+  const [darkMode, setDarkMode] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loadingAuth, setLoadingAuth] = useState(true);
+  const router = useRouter();
+  const initializedRef = useRef(false);
+
   const getInitialMode = () => {
-    if (typeof window === "undefined") return false; // SSR: default to light
+    if (typeof window === "undefined") return false;
     const saved = localStorage.getItem("theme");
     if (saved) return saved === "dark";
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
   };
 
-  const [darkMode, setDarkMode] = useState(getInitialMode);
-  const initializedRef = useRef(false); // To prevent duplicate initialization
-
   useEffect(() => {
-    // Set the initial theme class on documentElement to prevent flash
+    // Theme Init
     if (!initializedRef.current) {
       if (darkMode) {
         document.documentElement.classList.add("dark");
@@ -24,17 +28,27 @@ export default function Layout({ children }) {
       initializedRef.current = true;
     }
 
-    // Listen for system theme changes
+    // Auth Init
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setLoadingAuth(false);
+    };
+    checkUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = (e) => {
-      // Only update if user hasn't explicitly set a preference (i.e., no localStorage theme)
       if (!localStorage.getItem("theme")) {
         setDarkMode(e.matches);
       }
     };
     mediaQuery.addEventListener("change", handleChange);
 
-    // Update theme class and localStorage when darkMode state changes
     if (darkMode) {
       document.documentElement.classList.add("dark");
       localStorage.setItem("theme", "dark");
@@ -43,19 +57,37 @@ export default function Layout({ children }) {
       localStorage.setItem("theme", "light");
     }
 
-    // Cleanup
     return () => {
       mediaQuery.removeEventListener("change", handleChange);
+      subscription.unsubscribe();
     };
-  }, [darkMode]); // Re-run effect when darkMode changes
+  }, [darkMode]);
 
   const toggleDarkMode = () => {
     setDarkMode((prevMode) => !prevMode);
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300">
-      <header className="p-4 flex justify-end">
+      <header className="p-4 flex justify-end items-center gap-4">
+        {user && (
+          <div className="flex items-center gap-2 text-sm font-medium text-muted dark:text-gray-400">
+            <LuUser className="w-4 h-4" />
+            <span>Biologo</span>
+            <button 
+              onClick={handleLogout}
+              className="ml-2 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              title="Logout"
+            >
+              <LuLogOut className="w-4 h-4" />
+            </button>
+          </div>
+        )}
         <button
           onClick={toggleDarkMode}
           className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:ring-2 ring-primary transition-all"

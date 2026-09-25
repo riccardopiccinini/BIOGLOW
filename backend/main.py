@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Query
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Header, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
@@ -24,6 +24,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+async def verify_token(authorization: Optional[str] = Header(None)):
+    """
+    Verifica che l'utente sia autenticato tramite Supabase.
+    Il token deve essere passato nell'header Authorization come 'Bearer <token>'
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token di autenticazione mancante o non valido")
+    
+    token = authorization.split(" ")[1]
+    try:
+        # Utilizziamo Supabase per verificare l'utente tramite il JWT
+        user = supabase.auth.get_user(token)
+        if not user:
+            raise HTTPException(status_code=401, detail="Utente non autenticato")
+        return user
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Errore di autenticazione: {str(e)}")
 
 @app.get("/ping")
 async def ping():
@@ -108,7 +126,10 @@ async def get_observation(id: str):
     return obs
 
 @app.patch("/observations/{id}")
-async def update_observation(id: str, data: dict):
+async def update_observation(id: str, data: dict, user=Depends(verify_token)):
+    """
+    Protegiamo l'aggiornamento dello stato: solo utenti autenticati possono validare.
+    """
     if "verification_status" not in data:
         raise HTTPException(status_code=400, detail="Solo verification_status può essere aggiornato")
 
@@ -155,7 +176,6 @@ async def receive_observation(
     with open(tmp_path, "rb") as f:
         media_url = await upload_to_storage(f.read(), file.filename, station_id)
 
-    # Implement Confidence Filter
     confidence = result["confidence"]
     if confidence >= CONFIDENCE_THRESHOLDS["auto_confirm"]:
         verification_status = "confirmed"
