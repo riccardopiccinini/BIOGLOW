@@ -14,9 +14,9 @@ export default function SpeciesDetail() {
     fetcher
   );
 
-  if (!species) return <Layout><div className="p-8">Caricamento specie...</div></Layout>;
+  if (!species) return <Layout><div className="p-8">Caricamento dati...ti...</div></Layout>;
   if (error) return <Layout><div className="p-8 text-red-500">Errore nel caricamento dei dati</div></Layout>;
-  if (!observations) return <Layout><div className="p-8">Caricamento...</div></Layout>;
+  if (!observations) return <Layout><div className="p-8">Caricamento dati...</div></Layout>;
 
   const filteredObs = observations.filter(obs => obs.species === species);
 

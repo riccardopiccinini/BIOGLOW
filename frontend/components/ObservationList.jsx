@@ -38,7 +38,7 @@ export default function ObservationList({ filters }) {
   );
 
   if (error) return <div className="bg-white rounded-lg shadow-md p-6 text-red-500">Errore nel caricamento delle osservazioni</div>;
-  if (!data || !Array.isArray(data)) return <div className="bg-white rounded-lg shadow-md p-6 text-gray-500">Caricamento…</div>;
+  if (!data || !Array.isArray(data)) return <div className="bg-white rounded-lg shadow-md p-6 text-gray-500">Caricamento dati...</div>;
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">

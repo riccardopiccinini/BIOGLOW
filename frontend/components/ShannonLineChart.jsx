@@ -21,7 +21,7 @@ export default function ShannonLineChart({ interval = "month", filters = {} }) {
   );
 
   if (error) return <div className="bg-white rounded-lg shadow-md p-6 text-red-500">Errore nel caricamento dei dati Shannon</div>;
-  if (!data || !Array.isArray(data)) return <div className="bg-white rounded-lg shadow-md p-6 text-gray-500">Caricamento…</div>;
+  if (!data || !Array.isArray(data)) return <div className="bg-white rounded-lg shadow-md p-6 text-gray-500">Caricamento dati...</div>;
 
   // data atteso: [{ date: "2026-09-01T00:00:00Z", value: 1.23 }, ...]
   const chartData = data.map((d) => ({

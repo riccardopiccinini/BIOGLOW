@@ -15,7 +15,7 @@ export default function SpeciesIndex() {
   const { data, error } = useSWR("/observations", fetcher);
 
   if (error) return <Layout><div className="p-8 text-red-500">Errore nel caricamento delle specie</div></Layout>;
-  if (!data) return <Layout><div className="p-8">Caricamento...</div></Layout>;
+  if (!data) return <Layout><div className="p-8">Caricamento dati...</div></Layout>;
 
   const distinctSpecies = [...new Set(data.map(obs => obs.species))].filter(Boolean);
 

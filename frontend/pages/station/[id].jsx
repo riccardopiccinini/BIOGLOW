@@ -17,9 +17,9 @@ export default function StationDetail() {
     fetcher
   );
 
-  if (!id) return <Layout><div className="p-8">Caricamento stazione...</div></Layout>;
+  if (!id) return <Layout><div className="p-8">Caricamento dati...ti...</div></Layout>;
   if (error) return <Layout><div className="p-8 text-red-500">Errore nel caricamento dei dati della stazione</div></Layout>;
-  if (!stats) return <Layout><div className="p-8">Caricamento...</div></Layout>;
+  if (!stats) return <Layout><div className="p-8">Caricamento dati...</div></Layout>;
 
   const filters = { station: id, method: "", startDate: "", endDate: "" };
 

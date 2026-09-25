@@ -22,7 +22,7 @@ export default function MethodDistributionChart({ filters }) {
   );
 
   if (error) return <div className="bg-white rounded-lg shadow-md p-6 text-red-500">Errore nel caricamento dei metodi</div>;
-  if (!data || !Array.isArray(data)) return <div className="bg-white rounded-lg shadow-md p-6 text-gray-500">Caricamento…</div>;
+  if (!data || !Array.isArray(data)) return <div className="bg-white rounded-lg shadow-md p-6 text-gray-500">Caricamento dati...</div>;
 
   const counts = { audio: 0, image: 0 };
   data.forEach((obs) => {

@@ -6,7 +6,7 @@ export default function MethodDetail() {
   const router = useRouter();
   const { method } = router.query;
 
-  if (!method) return <Layout><div className="p-8">Caricamento metodo...</div></Layout>;
+  if (!method) return <Layout><div className="p-8">Caricamento dati...</div></Layout>;
 
   const methodLabel = method === "image" ? "Foto" : method === "audio" ? "Audio" : method;
 
