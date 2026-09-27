@@ -12,9 +12,8 @@ export default function AdminPanel() {
 
   const updateStatus = async (id, status) => {
     try {
-      await fetch(`/observations/${id}`, {
+      await fetcher(`/observations/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ verification_status: status }),
       });
       mutate(); 

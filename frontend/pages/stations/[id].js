@@ -15,16 +15,11 @@ export default function StationDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch station detail
   useEffect(() => {
     if (!id) return;
     setLoading(true);
     setError(null);
-    fetch(`/api/stations/${id}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Stazione non trovata");
-        return res.json();
-      })
+    fetcher(`/stations/${id}`)
       .then((data) => {
         setStationData(data);
         setLoading(false);
@@ -59,7 +54,6 @@ export default function StationDetail() {
   return (
     <Layout>
       <div className="p-6">
-        {/* Header with back button */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <button
             onClick={() => router.push("/")}
@@ -72,9 +66,7 @@ export default function StationDetail() {
           </h1>
         </div>
 
-        {/* Station info and stats */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Station details */}
           <div className="bg-white rounded-2xl shadow-md p-6">
             <h2 className="text-lg font-semibold mb-4 text-primary">Informazioni stazione</h2>
             <div className="space-y-3">
@@ -98,7 +90,6 @@ export default function StationDetail() {
             </div>
           </div>
 
-          {/* Stats */}
           <div className="bg-white rounded-2xl shadow-md p-6">
             <h2 className="text-lg font-semibold mb-4 text-primary">Statistiche</h2>
             <StatsCard
@@ -108,7 +99,6 @@ export default function StationDetail() {
             />
           </div>
 
-          {/* Species list */}
           <div className="bg-white rounded-2xl shadow-md p-6">
             <h2 className="text-lg font-semibold mb-4 text-primary">Specie osservate</h2>
             {species.length === 0 ? (
@@ -126,7 +116,6 @@ export default function StationDetail() {
           </div>
         </div>
 
-        {/* Tabs for different views */}
         <div className="mb-6">
           <div className="flex border-b border-gray-200">
             <button
@@ -150,9 +139,7 @@ export default function StationDetail() {
           </div>
         </div>
 
-        {/* Content based on active tab - we'll show all for simplicity */}
         <div className="space-y-8">
-          {/* Recent observations */}
           <section>
             <h2 className="text-lg font-semibold mb-4 text-primary">Osservazioni recenti</h2>
             <ObservationList
@@ -165,7 +152,6 @@ export default function StationDetail() {
             />
           </section>
 
-          {/* Species distribution */}
           <section>
             <h2 className="text-lg font-semibold mb-4 text-primary">Distribuzione specie presso questa stazione</h2>
             <SpeciesDistributionChart
@@ -178,7 +164,6 @@ export default function StationDetail() {
             />
           </section>
 
-          {/* Shannon trend */}
           <section>
             <h2 className="text-lg font-semibold mb-4 text-primary">Andamento indice di Shannon</h2>
             <ShannonLineChart

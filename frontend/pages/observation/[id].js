@@ -3,8 +3,7 @@ import useSWR from 'swr';
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { LuImage, LuMusic } from 'react-icons/lu';
-
-const fetcher = (url) => fetch(url).then(r => r.json());
+import { fetcher } from '../../lib/utils';
 
 export default function ObservationDetail() {
   const router = useRouter();
@@ -16,12 +15,10 @@ export default function ObservationDetail() {
     if (!id) return;
     setUpdating(true);
     try {
-      const res = await fetch(`/observations/${id}`, {
+      await fetcher(`/observations/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ verification_status: newStatus }),
       });
-      if (!res.ok) throw new Error('Errore aggiornamento');
       // Refetch data
       router.replace(router.asPath);
     } catch (e) {

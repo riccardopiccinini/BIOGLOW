@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { STATION_STATUS } from "../lib/constants";
+import { STATION_STATUS, fetcher } from "../lib/utils";
 
 export default function StationMap() {
   const router = useRouter();
@@ -11,11 +11,7 @@ export default function StationMap() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch(`/stations`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Impossible caricare le stazioni");
-        return res.json();
-      })
+    fetcher(`/stations`)
       .then((data) => {
         setStations(data);
         setLoading(false);
