@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { STATION_STATUS, fetcher } from "../lib/utils";
+import { STATION_STATUS } from "../lib/constants";
+import { fetcher } from "../lib/utils";
 
 export default function StationMap() {
   const router = useRouter();
