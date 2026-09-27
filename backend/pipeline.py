@@ -17,9 +17,11 @@ from constants import (
 
 # --- GEMINI AI SETUP ---
 if config.GEMINI_API_KEY:
+    print(f"Gemini API Key found. Initializing model...")
     genai.configure(api_key=config.GEMINI_API_KEY)
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:
+    print("WARNING: GEMINI_API_KEY not found in configuration. AI will be unavailable.")
     model = None
 
 async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -> str:
@@ -68,14 +70,24 @@ async def identify_image(file_path: Path) -> dict:
     if model:
         try:
             img = Image.open(file_path)
-            prompt = "Identify the animal species in this image. Return only the common name in Italian. If you cannot identify the animal or it is not an animal, return 'Sconosciuta'."
-            
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                None, lambda: model.generate_content([prompt, img])
+            # Enhanced prompt for better animal identification
+            prompt = (
+                "You are an expert biologist. Identify the animal species in this image. "
+                "Return ONLY the common name in Italian. "
+                "If you are not sure or it is not an animal, return 'Sconosciuta'."
             )
             
-            species = response.text.strip()
+            loop = asyncio.get_event_loop()
+            # Use a wrapper to handle safety filters and candidate responses
+            def call_gemini():
+                response = model.generate_content([prompt, img])
+                # Check if the response has text (safety filters can block content)
+                if response.candidates and response.candidates[0].content.parts:
+                    return response.text.strip()
+                return "Sconosciuta"
+
+            species = await loop.run_in_executor(None, call_gemini)
+            
             return {
                 "species": species,
                 "confidence": 0.90,
@@ -102,8 +114,7 @@ async def identify_audio(file_path: Path) -> dict:
                 None, lambda: genai.upload_file(path=str(file_path))
             )
             
-            # 2. IMPORTANT: Wait for file to be processed by Gemini
-            # Gemini files have states: PROCESSING -> ACTIVE
+            # 2. Wait for processing
             while True:
                 file_info = await loop.run_in_executor(None, lambda: genai.get_file(audio_file.name))
                 if file_info.state.name == 'ACTIVE':
@@ -112,7 +123,7 @@ async def identify_audio(file_path: Path) -> dict:
                     raise Exception("Gemini failed to process the audio file.")
                 await asyncio.sleep(2)
 
-            # 3. Enhanced Prompt for better animal recognition
+            # 3. Enhanced prompt
             prompt = (
                 "You are an expert biologist. Listen to this audio clip carefully. "
                 "Identify the animal species based on its vocalization. "
@@ -120,13 +131,15 @@ async def identify_audio(file_path: Path) -> dict:
                 "If you are not confident or it is not an animal sound, return 'Sconosciuta'."
             )
             
-            response = await loop.run_in_executor(
-                None, lambda: model.generate_content([prompt, audio_file])
-            )
+            def call_gemini_audio():
+                response = model.generate_content([prompt, audio_file])
+                if response.candidates and response.candidates[0].content.parts:
+                    return response.text.strip()
+                return "Sconosciuta"
+
+            species = await loop.run_in_executor(None, call_gemini_audio)
             
-            species = response.text.strip()
-            
-            # Clean up: delete the uploaded file from Gemini's temporary storage
+            # Cleanup
             await loop.run_in_executor(None, lambda: genai.delete_file(audio_file.name))
             
             return {
