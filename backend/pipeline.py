@@ -70,27 +70,31 @@ async def identify_image(file_path: Path) -> dict:
     if model:
         try:
             img = Image.open(file_path)
-            # Enhanced prompt for better animal identification
+            # MODIFIED: More open prompt to encourage a guess instead of 'Sconosciuta'
             prompt = (
-                "You are an expert biologist. Identify the animal species in this image. "
-                "Return ONLY the common name in Italian. "
-                "If you are not sure or it is not an animal, return 'Sconosciuta'."
+                "Analyze this image and identify the animal species. "
+                "Provide the most likely common name in Italian. "
+                "If you are not 100% sure, give your best guess. "
+                "Return ONLY the name of the species."
             )
             
             loop = asyncio.get_event_loop()
-            # Use a wrapper to handle safety filters and candidate responses
             def call_gemini():
                 response = model.generate_content([prompt, img])
-                # Check if the response has text (safety filters can block content)
                 if response.candidates and response.candidates[0].content.parts:
-                    return response.text.strip()
+                    text = response.text.strip()
+                    print(f"Gemini Image Raw Response: {text}")
+                    return text
                 return "Sconosciuta"
 
             species = await loop.run_in_executor(None, call_gemini)
             
+            if not species or species.lower() == "sconosciuta":
+                species = "Specie non identificata"
+
             return {
                 "species": species,
-                "confidence": 0.90,
+                "confidence": 0.70, # Lowered confidence since it's a guess
                 "source": "Google Gemini"
             }
         except Exception as e:
@@ -109,12 +113,10 @@ async def identify_audio(file_path: Path) -> dict:
         try:
             loop = asyncio.get_event_loop()
             
-            # 1. Upload file
             audio_file = await loop.run_in_executor(
                 None, lambda: genai.upload_file(path=str(file_path))
             )
             
-            # 2. Wait for processing
             while True:
                 file_info = await loop.run_in_executor(None, lambda: genai.get_file(audio_file.name))
                 if file_info.state.name == 'ACTIVE':
@@ -123,28 +125,32 @@ async def identify_audio(file_path: Path) -> dict:
                     raise Exception("Gemini failed to process the audio file.")
                 await asyncio.sleep(2)
 
-            # 3. Enhanced prompt
+            # MODIFIED: More open prompt for audio
             prompt = (
-                "You are an expert biologist. Listen to this audio clip carefully. "
-                "Identify the animal species based on its vocalization. "
-                "Return ONLY the common name of the species in Italian. "
-                "If you are not confident or it is not an animal sound, return 'Sconosciuta'."
+                "Listen to this audio clip. Identify the animal species based on its vocalization. "
+                "Provide the most likely common name in Italian. "
+                "Even if you are not certain, give your best guess based on the sound. "
+                "Return ONLY the name of the species."
             )
             
             def call_gemini_audio():
                 response = model.generate_content([prompt, audio_file])
                 if response.candidates and response.candidates[0].content.parts:
-                    return response.text.strip()
+                    text = response.text.strip()
+                    print(f"Gemini Audio Raw Response: {text}")
+                    return text
                 return "Sconosciuta"
 
             species = await loop.run_in_executor(None, call_gemini_audio)
             
-            # Cleanup
             await loop.run_in_executor(None, lambda: genai.delete_file(audio_file.name))
             
+            if not species or species.lower() == "sconosciuta":
+                species = "Suono non identificato"
+
             return {
                 "species": species,
-                "confidence": 0.90,
+                "confidence": 0.70,
                 "source": "Google Gemini"
             }
         except Exception as e:

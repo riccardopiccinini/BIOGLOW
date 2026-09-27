@@ -5,8 +5,8 @@ class ObservationMethod(str, Enum):
     AUDIO = "audio"
 
 CONFIDENCE_THRESHOLDS = {
-    "auto_confirm": 0.85,
-    "min_acceptable": 0.70,
+    "auto_confirm": 0.80,
+    "min_acceptable": 0.50,
 }
 
 # Configurazione Alert per il backend (necessaria per alerts.py)
