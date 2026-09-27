@@ -12,8 +12,13 @@ import { format } from "date-fns";
  * @returns {Promise<any>} - Parsed JSON response
  */
 export const fetcher = async (url, options = {}) => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
+  const fullUrl = url.startsWith("http") 
+    ? url 
+    : \`${baseUrl.replace(/\/$/, "")}\/${url.replace(/^\//, "")}\`;
+
   try {
-    const response = await fetch(url, {
+    const response = await fetch(fullUrl, {
       headers: {
         'Content-Type': 'application/json',
         ...options.headers
@@ -23,7 +28,7 @@ export const fetcher = async (url, options = {}) => {
 
     if (!response.ok) {
       // Create standardized error based on status code
-      const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
+      const error = new Error(\`HTTP \${response.status}: \${response.statusText}\`);
       error.status = response.status;
       error.statusText = response.statusText;
       
@@ -59,7 +64,7 @@ export const fetcher = async (url, options = {}) => {
     }
   } catch (error) {
     // Log error for debugging (in production, you might want to send to error tracking service)
-    console.error(`API Error [${url}]:`, error);
+    console.error(\`API Error [\${url}]:\`, error);
     throw error;
   }
 };
@@ -70,12 +75,17 @@ export const fetcher = async (url, options = {}) => {
  * @returns {Promise<any>} - Response data or null on error
  */
 export const jsonFetcher = async (url) => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
+  const fullUrl = url.startsWith("http") 
+    ? url 
+    : \`${baseUrl.replace(/\/$/, "")}\/${url.replace(/^\//, "")}\`;
+
   try {
-    const response = await fetch(url);
+    const response = await fetch(fullUrl);
     if (!response.ok) return null;
     return await response.json();
   } catch (error) {
-    console.error(`JSON Fetch Error [${url}]:`, error);
+    console.error(\`JSON Fetch Error [\${url}]:\`, error);
     return null;
   }
 };
@@ -131,7 +141,7 @@ export const formatShortDate = (dateStr) => formatDate(dateStr, "dd MMM");
  */
 export const formatConfidence = (confidence) => {
   if (confidence === undefined || confidence === null) return "0%";
-  return `${(confidence * 100).toFixed(1)}%`;
+  return \`\${(confidence * 100).toFixed(1)}%\`;
 };
 
 /**
