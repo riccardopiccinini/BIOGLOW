@@ -15,8 +15,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application
 COPY . .
 
+# Set the PYTHONPATH so Python can find the backend modules
+ENV PYTHONPATH=/app/backend
+
 # Expose the port Render uses
 EXPOSE 10000
 
-# Start the application
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "10000"]
+# Start the application from the backend module
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "10000", "--app-dir", "backend"]

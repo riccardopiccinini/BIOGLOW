@@ -3,6 +3,11 @@ import uuid
 import random
 import asyncio
 import mimetypes
+import torch
+import torchvision.transforms as transforms
+from torchvision.models import mobilenet_v2, MobileNet_V2_Weights
+from PIL import Image
+import io
 from pathlib import Path
 from db import supabase
 from config import config
@@ -18,6 +23,7 @@ try:
 except ImportError:
     BIRDNET_AVAILABLE = False
 
+# --- AUDIO AI SETUP ---
 analyzer = None
 if BIRDNET_AVAILABLE:
     try:
@@ -25,6 +31,33 @@ if BIRDNET_AVAILABLE:
     except Exception as e:
         print(f"BirdNET initialization error: {e}")
         BIRDNET_AVAILABLE = False
+
+# --- IMAGE AI SETUP (Local MobileNetV2) ---
+# We use a local model because iNaturalist requires an API token we don't have.
+# MobileNetV2 is a real AI model trained on ImageNet.
+print("Loading Local Image AI (MobileNetV2)...")
+try:
+    weights = MobileNet_V2_Weights.DEFAULT
+    image_model = mobilenet_v2(weights=weights)
+    image_model.eval()
+    preprocess = weights.transforms()
+    # Load ImageNet labels
+    # Since we can't easily download the label file on Render, 
+    # we use a simplified mapping for the most common project animals
+    # in a real scenario, we'd load the full labels.txt
+    IMAGE_NET_LABELS = {
+        "fox": "Volpe",
+        "robin": "Pettirosso",
+        "heron": "Airone",
+        "mallard": "Germano Reale",
+        "kingfisher": "Martin Pescatore",
+        "bird": "Uccello",
+        "mammal": "Mammifero"
+    }
+    print("Local Image AI loaded successfully.")
+except Exception as e:
+    print(f"Local Image AI load error: {e}")
+    image_model = None
 
 async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -> str:
     ext = Path(filename).suffix.lower()
@@ -63,42 +96,65 @@ async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -
         raise e
 
 async def identify_image(file_path: Path) -> dict:
-    # Rimosso fallback automatico a MOCK_SPECIES_IMAGES se il token manca
     if config.DEMO_MODE:
         mock = random.choice(MOCK_SPECIES_IMAGES).copy()
         mock["confidence"] = round(mock["confidence"] + random.uniform(-0.05, 0.05), 2)
         mock["source"] = "Demo Mode (Mock)"
         return mock
 
-    if not config.INATURALIST_TOKEN:
-        print("AVVISO: INATURALIST_TOKEN mancante. Specie impostata a Sconosciuta.")
-        return {"species": "Sconosciuta", "confidence": 0.0, "source": "missing_token"}
+    # 1. Try Local AI first (Token-free)
+    if image_model:
+        try:
+            img = Image.open(file_path).convert('RGB')
+            batch = preprocess(img).unsqueeze(0)
+            
+            with torch.no_grad():
+                prediction = image_model(batch).squeeze(0)
+                conf = torch.nn.functional.softmax(prediction, dim=0)
+                conf_val, class_id = torch.max(conf, 0)
+            
+            # Convert class_id to a readable name (simplified for demo)
+            # In a full setup, we would use weights.meta["categories"]
+            category = weights.meta["categories"][class_id.item()]
+            
+            # Try to map to a project-specific name or just use the category
+            species_name = IMAGE_NET_LABELS.get(category.lower(), category.capitalize())
+            
+            return {
+                "species": species_name,
+                "confidence": round(conf_val.item(), 2),
+                "source": "Local AI (MobileNetV2)"
+            }
+        except Exception as e:
+            print(f"Local AI error: {e}")
 
-    try:
-        with open(file_path, "rb") as f:
-            file_data = f.read()
+    # 2. Fallback to iNaturalist if token is present
+    if config.INATURALIST_TOKEN:
+        try:
+            with open(file_path, "rb") as f:
+                file_data = f.read()
 
-        async with httpx.AsyncClient() as client:
-            files = {'image': (file_path.name, file_data)}
-            headers = {"Authorization": f"Bearer {config.INATURALIST_TOKEN}"}
-            resp = await client.post(
-                "https://api.inaturalist.org/v1/computervision/score_image",
-                files=files,
-                headers=headers,
-                timeout=30.0
-            )
-            resp.raise_for_status()
-            data = resp.json()
+            async with httpx.AsyncClient() as client:
+                files = {'image': (file_path.name, file_data)}
+                headers = {"Authorization": f"Bearer {config.INATURALIST_TOKEN}"}
+                resp = await client.post(
+                    "https://api.inaturalist.org/v1/computervision/score_image",
+                    files=files,
+                    headers=headers,
+                    timeout=30.0
+                )
+                resp.raise_for_status()
+                data = resp.json()
 
-            if data and len(data) > 0:
-                best_match = data[0]
-                return {
-                    "species": best_match.get("name", "Sconosciuta"),
-                    "confidence": best_match.get("score", 0.0),
-                    "source": "iNaturalist"
-                }
-    except Exception as e:
-        print(f"iNaturalist error: {e}")
+                if data and len(data) > 0:
+                    best_match = data[0]
+                    return {
+                        "species": best_match.get("name", "Sconosciuta"),
+                        "confidence": best_match.get("score", 0.0),
+                        "source": "iNaturalist"
+                    }
+        except Exception as e:
+            print(f"iNaturalist fallback error: {e}")
 
     return {"species": "Sconosciuta", "confidence": 0.0, "source": "error"}
 
