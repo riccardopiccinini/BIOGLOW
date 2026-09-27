@@ -15,7 +15,7 @@ export const fetcher = async (url, options = {}) => {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
   const fullUrl = url.startsWith("http") 
     ? url 
-    : \`${baseUrl.replace(/\/$/, "")}\/${url.replace(/^\//, "")}\`;
+    : `${baseUrl.replace(/\/$/, "")}/${url.replace(/^\//, "")}`;
 
   try {
     const response = await fetch(fullUrl, {
@@ -27,12 +27,10 @@ export const fetcher = async (url, options = {}) => {
     });
 
     if (!response.ok) {
-      // Create standardized error based on status code
-      const error = new Error(\`HTTP \${response.status}: \${response.statusText}\`);
+      const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
       error.status = response.status;
       error.statusText = response.statusText;
       
-      // Try to get error message from response body
       try {
         const errorData = await response.json();
         if (errorData.message) {
@@ -41,7 +39,6 @@ export const fetcher = async (url, options = {}) => {
           error.message = errorData.error;
         }
       } catch (e) {
-        // If we can't parse JSON, use text
         const errorText = await response.text();
         if (errorText) {
           error.message = errorText;
@@ -51,7 +48,6 @@ export const fetcher = async (url, options = {}) => {
       throw error;
     }
 
-    // Handle empty responses
     if (response.status === 204) {
       return null;
     }
@@ -63,8 +59,7 @@ export const fetcher = async (url, options = {}) => {
       return await response.text();
     }
   } catch (error) {
-    // Log error for debugging (in production, you might want to send to error tracking service)
-    console.error(\`API Error [\${url}]:\`, error);
+    console.error(`API Error [${url}]:`, error);
     throw error;
   }
 };
@@ -78,14 +73,14 @@ export const jsonFetcher = async (url) => {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
   const fullUrl = url.startsWith("http") 
     ? url 
-    : \`${baseUrl.replace(/\/$/, "")}\/${url.replace(/^\//, "")}\`;
+    : `${baseUrl.replace(/\/$/, "")}/${url.replace(/^\//, "")}`;
 
   try {
     const response = await fetch(fullUrl);
     if (!response.ok) return null;
     return await response.json();
   } catch (error) {
-    console.error(\`JSON Fetch Error [\${url}]:\`, error);
+    console.error(`JSON Fetch Error [${url}]:`, error);
     return null;
   }
 };
@@ -104,7 +99,6 @@ export const buildFilterParams = (filters = {}, additionalParams = {}) => {
   if (filters.startDate) params.append("start", filters.startDate);
   if (filters.endDate) params.append("end", filters.endDate);
 
-  // Append additional params
   Object.entries(additionalParams).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== "") {
       params.append(key, value);
@@ -141,7 +135,7 @@ export const formatShortDate = (dateStr) => formatDate(dateStr, "dd MMM");
  */
 export const formatConfidence = (confidence) => {
   if (confidence === undefined || confidence === null) return "0%";
-  return \`\${(confidence * 100).toFixed(1)}%\`;
+  return `${(confidence * 100).toFixed(1)}%`;
 };
 
 /**
