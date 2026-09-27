@@ -14,7 +14,7 @@ export default function SpeciesDistributionChart({ filters }) {
     setLoadingRef(true);
     jsonFetcher("/docs/species_reference.json")
       .then((data) => {
-        setSpeciesRef(data);
+        setSpeciesRef(data || { rare: [], protected: [], invasive: [] });
         setLoadingRef(false);
       })
       .catch((err) => {
@@ -41,9 +41,9 @@ export default function SpeciesDistributionChart({ filters }) {
     counts[sp] = (counts[sp] || 0) + 1;
     
     let category = "normal";
-    if (speciesRef.rare?.includes(sp)) category = "rare";
-    else if (speciesRef.protected?.includes(sp)) category = "protected";
-    else if (speciesRef.invasive?.includes(sp)) category = "invasive";
+    if (speciesRef?.rare?.includes(sp)) category = "rare";
+    else if (speciesRef?.protected?.includes(sp)) category = "protected";
+    else if (speciesRef?.invasive?.includes(sp)) category = "invasive";
     
     speciesCategories[sp] = category;
   });

@@ -5,8 +5,8 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 async def send_observation(client, file_path, method, station_id):
-    # URL del backend online fornito dall'utente
-    url = "https://monitor-secchia-backend.onrender.com/observations"
+    # URL del backend online aggiornato
+    url = "https://bioglow-9ge9.onrender.com/observations"
     
     # Parametri che l'ESP32 manderebbe normalmente
     params = {
@@ -35,7 +35,7 @@ async def main():
     foto_dir = Path("Foto")
     
     print(f"--- SIMULAZIONE HARDWARE ESP32 [{station_id}] ---")
-    print("Invio dati al backend online (https://monitor-secchia-backend.onrender.com)...")
+    print("Invio dati al backend online (https://bioglow-9ge9.onrender.com)...")
     
     async with httpx.AsyncClient() as client:
         # Processo Foto
