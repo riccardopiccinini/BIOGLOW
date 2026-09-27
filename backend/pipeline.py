@@ -17,11 +17,11 @@ from constants import (
 
 # --- GEMINI AI SETUP ---
 if config.GEMINI_API_KEY:
-    print(f"Gemini API Key found. Initializing model...")
+    print(f"DEBUG: Gemini API Key found. Initializing model...")
     genai.configure(api_key=config.GEMINI_API_KEY)
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:
-    print("WARNING: GEMINI_API_KEY not found in configuration. AI will be unavailable.")
+    print("DEBUG: WARNING: GEMINI_API_KEY not found in configuration.")
     model = None
 
 async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -> str:
@@ -61,6 +61,7 @@ async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -
         raise e
 
 async def identify_image(file_path: Path) -> dict:
+    print(f"DEBUG: Starting image identification for {file_path.name}")
     if config.DEMO_MODE:
         mock = random.choice(MOCK_SPECIES_IMAGES).copy()
         mock["confidence"] = round(mock["confidence"] + random.uniform(-0.05, 0.05), 2)
@@ -70,21 +71,30 @@ async def identify_image(file_path: Path) -> dict:
     if model:
         try:
             img = Image.open(file_path)
-            # MODIFIED: More open prompt to encourage a guess instead of 'Sconosciuta'
+            # MODIFIED: Chain-of-Thought prompting. Ask AI to describe and then name.
+            # This significantly improves recognition accuracy.
             prompt = (
-                "Analyze this image and identify the animal species. "
-                "Provide the most likely common name in Italian. "
-                "If you are not 100% sure, give your best guess. "
-                "Return ONLY the name of the species."
+                "You are an expert wildlife biologist. "
+                "1. Describe the animal features you see in the image. "
+                "2. Based on these features, identify the most likely species. "
+                "3. Provide the final answer as: 'Specie: [Common Name in Italian]'. "
+                "If it's not an animal, return 'Specie: Sconosciuta'."
             )
             
             loop = asyncio.get_event_loop()
             def call_gemini():
+                print("DEBUG: Sending image to Gemini...")
                 response = model.generate_content([prompt, img])
                 if response.candidates and response.candidates[0].content.parts:
                     text = response.text.strip()
-                    print(f"Gemini Image Raw Response: {text}")
-                    return text
+                    print(f"DEBUG: Gemini Image Raw Response: {text}")
+                    
+                    # Extract only the species name from 'Specie: [Name]'
+                    if "Specie:" in text:
+                        species = text.split("Specie:")[-1].strip()
+                    else:
+                        species = text.split("\n")[-1].strip()
+                    return species
                 return "Sconosciuta"
 
             species = await loop.run_in_executor(None, call_gemini)
@@ -94,15 +104,16 @@ async def identify_image(file_path: Path) -> dict:
 
             return {
                 "species": species,
-                "confidence": 0.70, # Lowered confidence since it's a guess
+                "confidence": 0.70,
                 "source": "Google Gemini"
             }
         except Exception as e:
-            print(f"Gemini Image error: {e}")
+            print(f"DEBUG: Gemini Image error: {str(e)}")
 
     return {"species": "Sconosciuta", "confidence": 0.0, "source": "error"}
 
 async def identify_audio(file_path: Path) -> dict:
+    print(f"DEBUG: Starting audio identification for {file_path.name}")
     if config.DEMO_MODE:
         mock = random.choice(MOCK_SPECIES_AUDIO).copy()
         mock["confidence"] = round(mock["confidence"] + random.uniform(-0.05, 0.05), 2)
@@ -113,6 +124,7 @@ async def identify_audio(file_path: Path) -> dict:
         try:
             loop = asyncio.get_event_loop()
             
+            print("DEBUG: Uploading audio to Gemini...")
             audio_file = await loop.run_in_executor(
                 None, lambda: genai.upload_file(path=str(file_path))
             )
@@ -120,25 +132,34 @@ async def identify_audio(file_path: Path) -> dict:
             while True:
                 file_info = await loop.run_in_executor(None, lambda: genai.get_file(audio_file.name))
                 if file_info.state.name == 'ACTIVE':
+                    print("DEBUG: Audio file is now ACTIVE.")
                     break
                 if file_info.state.name == 'FAILED':
                     raise Exception("Gemini failed to process the audio file.")
+                print("DEBUG: Waiting for audio to be processed...")
                 await asyncio.sleep(2)
 
-            # MODIFIED: More open prompt for audio
+            # MODIFIED: Chain-of-Thought prompting for audio
             prompt = (
-                "Listen to this audio clip. Identify the animal species based on its vocalization. "
-                "Provide the most likely common name in Italian. "
-                "Even if you are not certain, give your best guess based on the sound. "
-                "Return ONLY the name of the species."
+                "You are an expert bioacoustician. "
+                "1. Describe the characteristics of the sound (pitch, rhythm, pattern). "
+                "2. Identify the animal species based on these vocalizations. "
+                "3. Provide the final answer as: 'Specie: [Common Name in Italian]'. "
+                "If it's not an animal sound, return 'Specie: Sconosciuta'."
             )
             
             def call_gemini_audio():
+                print("DEBUG: Sending audio prompt to Gemini...")
                 response = model.generate_content([prompt, audio_file])
                 if response.candidates and response.candidates[0].content.parts:
                     text = response.text.strip()
-                    print(f"Gemini Audio Raw Response: {text}")
-                    return text
+                    print(f"DEBUG: Gemini Audio Raw Response: {text}")
+                    
+                    if "Specie:" in text:
+                        species = text.split("Specie:")[-1].strip()
+                    else:
+                        species = text.split("\n")[-1].strip()
+                    return species
                 return "Sconosciuta"
 
             species = await loop.run_in_executor(None, call_gemini_audio)
@@ -154,6 +175,6 @@ async def identify_audio(file_path: Path) -> dict:
                 "source": "Google Gemini"
             }
         except Exception as e:
-            print(f"Gemini Audio error: {e}")
+            print(f"DEBUG: Gemini Audio error: {str(e)}")
 
     return {"species": "Sconosciuta", "confidence": 0.0, "source": "error"}
