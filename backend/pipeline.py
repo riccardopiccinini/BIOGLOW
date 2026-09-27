@@ -34,7 +34,6 @@ async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -
     if not config.SUPABASE_STORAGE_BUCKET:
         raise Exception("SUPABASE_STORAGE_BUCKET non configurato nel server")
 
-    # Explicit mapping for common project types to avoid application/octet-stream
     manual_mimes = {
         ".jpg": "image/jpeg",
         ".jpeg": "image/jpeg",
@@ -60,11 +59,11 @@ async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -
             raise Exception("Il server di Storage ha rifiutato l'upload (risposta vuota)")
         return supabase.storage.from_(config.SUPABASE_STORAGE_BUCKET).get_public_url(path)
     except Exception as e:
-        # Rimuoviamo il fallback dell'immagine verde e rilanciamo l'errore vero
         print(f"CRITICAL STORAGE ERROR: {e}")
         raise e
 
 async def identify_image(file_path: Path) -> dict:
+    # Rimosso fallback automatico a MOCK_SPECIES_IMAGES se il token manca
     if config.DEMO_MODE:
         mock = random.choice(MOCK_SPECIES_IMAGES).copy()
         mock["confidence"] = round(mock["confidence"] + random.uniform(-0.05, 0.05), 2)
@@ -72,9 +71,8 @@ async def identify_image(file_path: Path) -> dict:
         return mock
 
     if not config.INATURALIST_TOKEN:
-        mock = random.choice(MOCK_SPECIES_IMAGES).copy()
-        mock["confidence"] = round(mock["confidence"] + random.uniform(-0.05, 0.05), 2)
-        return mock
+        print("AVVISO: INATURALIST_TOKEN mancante. Specie impostata a Sconosciuta.")
+        return {"species": "Sconosciuta", "confidence": 0.0, "source": "missing_token"}
 
     try:
         with open(file_path, "rb") as f:
@@ -112,9 +110,8 @@ async def identify_audio(file_path: Path) -> dict:
         return mock
 
     if not BIRDNET_AVAILABLE or analyzer is None:
-        mock = random.choice(MOCK_SPECIES_AUDIO).copy()
-        mock["confidence"] = round(mock["confidence"] + random.uniform(-0.05, 0.05), 2)
-        return mock
+        print("AVVISO: BirdNET non disponibile. Specie impostata a Sconosciuta.")
+        return {"species": "Sconosciuta", "confidence": 0.0, "source": "birdnet_unavailable"}
 
     try:
         loop = asyncio.get_event_loop()
