@@ -8,23 +8,23 @@ from alerts import check_and_create_alert
 # Specie mock realistiche per zona Secchia (mix di uccelli comuni, rari, protetti)
 MOCK_SPECIES_DATA = [
     # Uccelli comuni
-    {"species": "Passer domesticus", "category": "bird", "method": "image", "confidence": 0.92, "source": "iNaturalist (mock)", "verification_status": "confirmed"},
-    {"species": "Turdus merula", "category": "bird", "method": "image", "confidence": 0.87, "source": "iNaturalist (mock)", "verification_status": "confirmed"},
-    {"species": "Parus major", "category": "bird", "method": "image", "confidence": 0.91, "source": "iNaturalist (mock)", "verification_status": "confirmed"},
-    {"species": "Erithacus rubecula", "category": "bird", "method": "image", "confidence": 0.85, "source": "iNaturalist (mock)", "verification_status": "pending"},
-    {"species": "Fringilla coelebs", "category": "bird", "method": "image", "confidence": 0.89, "source": "iNaturalist (mock)", "verification_status": "confirmed"},
-    {"species": "Sylvia atricapilla", "category": "bird", "method": "image", "confidence": 0.83, "source": "iNaturalist (mock)", "verification_status": "pending"},
+    {"species": "Passer domesticus", "category": "bird", "method": "image", "confidence": 0.92, "source": "Gemini (mock)", "verification_status": "confirmed"},
+    {"species": "Turdus merula", "category": "bird", "method": "image", "confidence": 0.87, "source": "Gemini (mock)", "verification_status": "confirmed"},
+    {"species": "Parus major", "category": "bird", "method": "image", "confidence": 0.91, "source": "Gemini (mock)", "verification_status": "confirmed"},
+    {"species": "Erithacus rubecula", "category": "bird", "method": "image", "confidence": 0.85, "source": "Gemini (mock)", "verification_status": "pending"},
+    {"species": "Fringilla coelebs", "category": "bird", "method": "image", "confidence": 0.89, "source": "Gemini (mock)", "verification_status": "confirmed"},
+    {"species": "Sylvia atricapilla", "category": "bird", "method": "image", "confidence": 0.83, "source": "Gemini (mock)", "verification_status": "pending"},
     # Uccelli da audio
-    {"species": "Cuculus canorus", "category": "bird", "method": "audio", "confidence": 0.94, "source": "BirdNET (mock)", "verification_status": "confirmed"},
-    {"species": "Upupa epops", "category": "bird", "method": "audio", "confidence": 0.91, "source": "BirdNET (mock)", "verification_status": "pending"},
-    {"species": "Luscinia megarhynchos", "category": "bird", "method": "audio", "confidence": 0.89, "source": "BirdNET (mock)", "verification_status": "confirmed"},
-    {"species": "Oriolus oriolus", "category": "bird", "method": "audio", "confidence": 0.86, "source": "BirdNET (mock)", "verification_status": "pending"},
+    {"species": "Cuculus canorus", "category": "bird", "method": "audio", "confidence": 0.94, "source": "Gemini (mock)", "verification_status": "confirmed"},
+    {"species": "Upupa epops", "category": "bird", "method": "audio", "confidence": 0.91, "source": "Gemini (mock)", "verification_status": "pending"},
+    {"species": "Luscinia megarhynchos", "category": "bird", "method": "audio", "confidence": 0.89, "source": "Gemini (mock)", "verification_status": "confirmed"},
+    {"species": "Oriolus oriolus", "category": "bird", "method": "audio", "confidence": 0.86, "source": "Gemini (mock)", "verification_status": "pending"},
     # Specie rara (per alert)
-    {"species": "Aquila chrysaetos", "category": "bird", "method": "image", "confidence": 0.78, "source": "iNaturalist (mock)", "verification_status": "pending"},
+    {"species": "Aquila chrysaetos", "category": "bird", "method": "image", "confidence": 0.78, "source": "Gemini (mock)", "verification_status": "pending"},
     # Specie protetta (per alert)
-    {"species": "Falco peregrinus", "category": "bird", "method": "image", "confidence": 0.82, "source": "iNaturalist (mock)", "verification_status": "confirmed"},
+    {"species": "Falco peregrinus", "category": "bird", "method": "image", "confidence": 0.82, "source": "Gemini (mock)", "verification_status": "confirmed"},
     # Specie invasiva (per alert)
-    {"species": "Psittacula krameri", "category": "bird", "method": "image", "confidence": 0.88, "source": "iNaturalist (mock)", "verification_status": "pending"},
+    {"species": "Psittacula krameri", "category": "bird", "method": "image", "confidence": 0.88, "source": "Gemini (mock)", "verification_status": "pending"},
 ]
 
 STATIONS = ["SECCHIA-01", "SECCHIA-02", "SECCHIA-03", "SECCHIA-04"]
@@ -78,9 +78,9 @@ async def load_demo_data():
 
     # Aggiungi alcune osservazioni forzate per garantire alert
     forced_alerts = [
-        {"species": "Aquila chrysaetos", "category": "bird", "method": "image", "confidence": 0.80, "source": "iNaturalist (mock)", "verification_status": "pending"},
-        {"species": "Falco peregrinus", "category": "bird", "method": "image", "confidence": 0.85, "source": "iNaturalist (mock)", "verification_status": "confirmed"},
-        {"species": "Psittacula krameri", "category": "bird", "method": "image", "confidence": 0.90, "source": "iNaturalist (mock)", "verification_status": "pending"},
+        {"species": "Aquila chrysaetos", "category": "bird", "method": "image", "confidence": 0.80, "source": "Gemini (mock)", "verification_status": "pending"},
+        {"species": "Falco peregrinus", "category": "bird", "method": "image", "confidence": 0.85, "source": "Gemini (mock)", "verification_status": "confirmed"},
+        {"species": "Psittacula krameri", "category": "bird", "method": "image", "confidence": 0.90, "source": "Gemini (mock)", "verification_status": "pending"},
     ]
     base_date = datetime.datetime(2026, 6, 1)
     for i, spec in enumerate(forced_alerts):

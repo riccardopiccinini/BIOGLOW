@@ -5,21 +5,20 @@ Sistema intelligente per il monitoraggio della biodiversità osservata nella zon
 ## 🏗️ Architettura del Sistema
 
 Il flusso dei dati segue questa catena:
-**Stazione (ESP32) → Backend (FastAPI) → AI (iNaturalist/BirdNET) → Database (Supabase) → Dashboard (Next.js)**
+**Stazione (ESP32) → Backend (FastAPI) → AI (Google Gemini) → Database (Supabase) → Dashboard (Next.js)**
 
 ### Componenti Tecnici
 - **Hardware**: Stazione basata su ESP32 con sensore PIR, camera e microfono.
 - **Backend**: FastAPI (Python) ospitato su Render. Gestisce l'identificazione e l'archiviazione.
 - **Intelligenza Artificiale**: 
-  - **Immagini**: API di iNaturalist per l'identificazione delle specie.
-  - **Audio**: BirdNET (implementazione locale) per l'analisi dei canti degli uccelli.
+  - **Multimodale**: Google Gemini 1.5 Flash per l'identificazione sia di immagini che di file audio.
 - **Database & Storage**: Supabase per la persistenza dei dati e l'archiviazione dei file multimediali.
 - **Dashboard**: Interfaccia in Next.js (Vercel) per la visualizzazione di statistiche, grafici e alert.
 
 ## 🚀 Stato di Avanzamento (Settembre 2026)
 
 ### ✅ Implementato (Software)
-- **Pipeline di Riconoscimento**: Integrazione completa con iNaturalist e BirdNET.
+- **Pipeline di Riconoscimento**: Integrazione completa con Google Gemini.
 - **Analisi Scientifica**: Calcolo automatico dell'Indice di Biodiversità di Shannon.
 - **Sistema di Alert**: Rilevamento automatico di specie rare, protette e invasive tramite liste di riferimento.
 - **Dashboard**: Visualizzazione in tempo reale di osservazioni, grafici temporali e mappa stazioni.
@@ -40,7 +39,7 @@ Il flusso dei dati segue questa catena:
 1. Installare le dipendenze: `pip install -r backend/requirements.txt`
 2. Configurare le variabili d'ambiente in `.env`:
    - `SUPABASE_URL`, `SUPABASE_KEY`
-   - `INATURALIST_TOKEN`
+   - `GEMINI_API_KEY`
    - `DEMO_MODE=true` (per attivare la modalità dimostrazione)
 3. Avviare il server: `uvicorn backend.main:app --reload`
 

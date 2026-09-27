@@ -6,7 +6,5 @@ supabase
 httpx
 python-dotenv
 fpdf2
-birdnetlib
+google-generativeai
 numpy
-torch --index-url https://download.pytorch.org/whl/cpu
-torchvision --index-url https://download.pytorch.org/whl/cpu

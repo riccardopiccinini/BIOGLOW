@@ -4,7 +4,7 @@
 1. **Set environment variables** in your deployment environment (Render):
    - `SUPABASE_URL`: Project URL of Supabase.
    - `SUPABASE_KEY`: Anon public key of Supabase.
-   - `INATURALIST_TOKEN`: Token for iNaturalist API.
+   - `GEMINI_API_KEY`: Your Google Gemini API key from AI Studio.
    - `DEMO_MODE`: Set to `true` to force mock results, `false` for real AI identification.
 2. **Install dependencies**:
    ```bash
