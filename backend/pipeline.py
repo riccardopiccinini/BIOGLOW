@@ -32,22 +32,35 @@ HF_IMAGE_MODEL = "llava-hf/llava-1.5-7b-hf"
 HF_AUDIO_MODEL = "MIT/ast-finetuned-audioset"
 
 async def call_hf_api(model_id: str, data: bytes, prompt: Optional[str] = None):
-    """Generic helper to call Hugging Face Inference API"""
+    """Generic helper to call Hugging Face Inference API with retries for DNS/network errors"""
     headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
-    payload = {"inputs": data}
-    if prompt:
-        payload["parameters"] = {"prompt": prompt}
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"https://api-inference.huggingface.co/models/{model_id}",
-            headers=headers,
-            content=data, # Some models take raw bytes as 'inputs'
-            timeout=30.0
-        )
-        if response.status_code != 200:
-            raise Exception(f"HF API Error: {response.status_code} - {response.text}")
-        return response.json()
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"https://api-inference.huggingface.co/models/{model_id}",
+                    headers=headers,
+                    content=data,
+                    timeout=30.0
+                )
+                if response.status_code != 200:
+                    # Special case: model is loading
+                    if response.status_code == 503:
+                        print(f"DEBUG: HF Model {model_id} is loading... retrying...")
+                        await asyncio.sleep(5)
+                        continue
+                    raise Exception(f"HF API Error: {response.status_code} - {response.text}")
+                return response.json()
+        except Exception as e:
+            if attempt < max_retries - 1:
+                wait_time = (attempt + 1) * 2
+                print(f"DEBUG: HF API Network error: {e}. Retrying in {wait_time}s... (Attempt {attempt+1})")
+                await asyncio.sleep(wait_time)
+            else:
+                print(f"DEBUG: HF API failed after {max_retries} attempts: {e}")
+                raise e
 
 async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -> str:
     ext = Path(filename).suffix.lower()
@@ -65,25 +78,33 @@ async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -
         ".mp3": "audio/mpeg",
         ".ogg": "audio/ogg",
     }
-    
+
     mime_type = manual_mimes.get(ext)
     if not mime_type:
         mime_type, _ = mimetypes.guess_type(filename)
         if not mime_type:
             mime_type = "application/octet-stream"
 
-    try:
-        res = supabase.storage.from_(config.SUPABASE_STORAGE_BUCKET).upload(
-            path=path,
-            file=file_bytes,
-            file_options={"content-type": mime_type}
-        )
-        if not res:
-            raise Exception("Il server di Storage ha rifiutato l'upload (risposta vuota)")
-        return supabase.storage.from_(config.SUPABASE_STORAGE_BUCKET).get_public_url(path)
-    except Exception as e:
-        print(f"CRITICAL STORAGE ERROR: {e}")
-        raise e
+    # Retry logic for storage timeouts
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            res = supabase.storage.from_(config.SUPABASE_STORAGE_BUCKET).upload(
+                path=path,
+                file=file_bytes,
+                file_options={"content-type": mime_type}
+            )
+            if not res:
+                raise Exception("Il server di Storage ha rifiutato l'upload (risposta vuota)")
+            return supabase.storage.from_(config.SUPABASE_STORAGE_BUCKET).get_public_url(path)
+        except Exception as e:
+            if attempt < max_retries - 1:
+                wait_time = (attempt + 1) * 2
+                print(f"DEBUG: Storage upload timeout/error. Retrying in {wait_time}s... (Attempt {attempt+1})")
+                await asyncio.sleep(wait_time)
+            else:
+                print(f"CRITICAL STORAGE ERROR after {max_retries} attempts: {e}")
+                raise e
 
 def parse_gemini_response(text):
     """
