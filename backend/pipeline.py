@@ -19,7 +19,7 @@ from huggingface_hub import InferenceClient
 # Hugging Face API Setup
 HF_TOKEN = config.HUGGINGFACE_API_KEY
 HF_IMAGE_MODEL = "llava-hf/llava-1.5-7b-hf"
-HF_AUDIO_MODEL = "MIT/ast-finetuned-audioset"
+HF_AUDIO_MODEL = "MIT/ast-finetuned-audioset-10-10-0.4593"
 
 # Initialize Hugging Face Inference Client
 hf_client = None
