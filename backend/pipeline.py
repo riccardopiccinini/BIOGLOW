@@ -29,6 +29,56 @@ if HF_TOKEN:
 else:
     print("DEBUG: WARNING: HUGGINGFACE_API_KEY not found in configuration.")
 
+# Storage upload function
+async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -> str:
+    ext = Path(filename).suffix.lower()
+    file_id = str(uuid.uuid4())
+    path = f"stations/{station_id}/{file_id}{ext}"
+
+    if not config.SUPABASE_STORAGE_BUCKET:
+        raise Exception("SUPABASE_STORAGE_BUCKET non configurato nel server")
+
+    manual_mimes = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".wav": "audio/wav",
+        ".mp3": "audio/mpeg",
+        ".ogg": "audio/ogg",
+    }
+
+    mime_type = manual_mimes.get(ext)
+    if not mime_type:
+        mime_type, _ = mimetypes.guess_type(filename)
+        if not mime_type:
+            mime_type = "application/octet-stream"
+
+    # Retry logic for storage timeouts and duplicate handling
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            res = supabase.storage.from_(config.SUPABASE_STORAGE_BUCKET).upload(
+                path=path,
+                file=file_bytes,
+                file_options={"content-type": mime_type}
+            )
+            if not res:
+                raise Exception("Il server di Storage ha rifiutato l'upload (risposta vuota)")
+            return supabase.storage.from_(config.SUPABASE_STORAGE_BUCKET).get_public_url(path)
+        except Exception as e:
+            # Handle Duplicate error (409) as success: the file is already there
+            if "Duplicate" in str(e) or "409" in str(e):
+                print(f"DEBUG: File already exists in storage (409 Duplicate), treating as success.")
+                return supabase.storage.from_(config.SUPABASE_STORAGE_BUCKET).get_public_url(path)
+
+            if attempt < max_retries - 1:
+                wait_time = (attempt + 1) * 2
+                print(f"DEBUG: Storage upload timeout/error. Retrying in {wait_time}s... (Attempt {attempt+1})")
+                await asyncio.sleep(wait_time)
+            else:
+                print(f"CRITICAL STORAGE ERROR after {max_retries} attempts: {e}")
+                raise e
+
 # Mapping from AudioSet labels to scientific names (for alert matching)
 # AudioSet uses English common names, our reference uses scientific names
 AUDIOSET_TO_SCIENTIFIC = {
@@ -137,7 +187,7 @@ async def identify_image(file_path: Path) -> dict:
                         {
                             "type": "image_url",
                             "image_url": {
-                                "url": f"data:image/jpeg;base64,{img_base64}"
+                                "url": f"data:image/jpeg;base64:{img_base64}"
                             }
                         }
                     ]
@@ -199,18 +249,17 @@ async def identify_image(file_path: Path) -> dict:
                 }
             else:
                 print("DEBUG: HF LLaVA returned empty result")
+                return {"species": "Sconosciuta", "confidence": 0.0, "source": "error"}
                 
         except Exception as e:
             print(f"DEBUG: Hugging Face Image error: {e}")
             import traceback
             print(f"DEBUG: Full traceback: {traceback.format_exc()}")
-
-    # Fallback to Demo Mode if HF fails
-    print("DEBUG: Falling back to Demo Mode for image identification")
-    mock = random.choice(MOCK_SPECIES_IMAGES).copy()
-    mock["confidence"] = round(mock["confidence"] + random.uniform(-0.05, 0.05), 2)
-    mock["source"] = "Demo Mode (HF Fallback)"
-    return mock
+            return {"species": "Sconosciuta", "confidence": 0.0, "source": "error"}
+    
+    # If hf_client is None (no token)
+    print("DEBUG: WARNING: HUGGINGFACE_API_KEY not found in configuration.")
+    return {"species": "Sconosciuta", "confidence": 0.0, "source": "error"}
 
 async def identify_audio(file_path: Path) -> dict:
     print(f"DEBUG: Starting audio identification for {file_path.name}")
@@ -248,15 +297,14 @@ async def identify_audio(file_path: Path) -> dict:
                 }
             else:
                 print("DEBUG: HF AST returned empty result")
+                return {"species": "Sconosciuta", "confidence": 0.0, "source": "error"}
                 
         except Exception as e:
             print(f"DEBUG: Hugging Face Audio error: {e}")
             import traceback
             print(f"DEBUG: Full traceback: {traceback.format_exc()}")
+            return {"species": "Sconosciuta", "confidence": 0.0, "source": "error"}
 
-    # Fallback to Demo Mode if HF fails
-    print("DEBUG: Falling back to Demo Mode for audio identification")
-    mock = random.choice(MOCK_SPECIES_AUDIO).copy()
-    mock["confidence"] = round(mock["confidence"] + random.uniform(-0.05, 0.05), 2)
-    mock["source"] = "Demo Mode (HF Fallback)"
-    return mock
+    # If hf_client is None (no token)
+    print("DEBUG: WARNING: HUGGINGFACE_API_KEY not found in configuration.")
+    return {"species": "Sconosciuta", "confidence": 0.0, "source": "error"}
