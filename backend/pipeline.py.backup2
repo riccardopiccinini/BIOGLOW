@@ -7,6 +7,7 @@ import io
 import re
 from pathlib import Path
 from typing import Optional, List
+import base64
 from db import supabase
 from config import config
 from constants import (
@@ -19,13 +20,13 @@ from huggingface_hub import InferenceClient
 # Hugging Face API Setup
 HF_TOKEN = config.HUGGINGFACE_API_KEY
 HF_IMAGE_MODEL = "llava-hf/llava-1.5-7b-hf"
-HF_AUDIO_MODEL = "MIT/ast-finetuned-audioset"
+HF_AUDIO_MODEL = "MIT/ast-finetuned-audioset-10-10-0.4593"  # Corrected model ID
 
-# Initialize Hugging Face Inference Client
+# Initialize Hugging Face Inference Client with explicit provider
 hf_client = None
 if HF_TOKEN:
-    hf_client = InferenceClient(token=HF_TOKEN)
-    print("DEBUG: Hugging Face Inference Client initialized")
+    hf_client = InferenceClient(provider="hf-inference", token=HF_TOKEN)
+    print("DEBUG: Hugging Face Inference Client initialized with hf-inference provider")
 else:
     print("DEBUG: WARNING: HUGGINGFACE_API_KEY not found in configuration.")
 
@@ -139,6 +140,15 @@ def parse_gemini_response(text):
             
     return species, confidence
 
+def _encode_image_to_base64(image_bytes: bytes) -> str:
+    """Encode image bytes to base64 string with proper MIME type prefix"""
+    # Detect MIME type from file extension or content
+    # For simplicity, we'll assume JPEG/PNG and use a generic approach
+    # In production, you might want to detect the actual image type
+    base64_string = base64.b64encode(image_bytes).decode('utf-8')
+    # Assuming JPEG for now - could be made more robust
+    return f"data:image/jpeg;base64,{base64_string}"
+
 async def identify_image(file_path: Path) -> dict:
     print(f"DEBUG: Starting image identification for {file_path.name}")
     if config.DEMO_MODE:
@@ -154,23 +164,32 @@ async def identify_image(file_path: Path) -> dict:
                 img_bytes = f.read()
 
             print(f"DEBUG: Calling Hugging Face LLaVA for {file_path.name}...")
-            # Use visual_question_answering to get the scientific name and confidence
-            # We ask the model to return the scientific name and a confidence score
-            result = hf_client.visual_question_answering(
-                image=img_bytes,
-                question="What is the scientific name of the animal in the image? Give the scientific name and a confidence score between 0 and 1, separated by a comma. For example: 'Erithacus rubecula, 0.85'",
-                model=HF_IMAGE_MODEL
+            # Encode image to base64 for transmission
+            image_b64 = _encode_image_to_base64(img_bytes)
+            
+            # Use chat.completions for conversational interaction with the image
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "What is the scientific name of the animal in this image? Give only the scientific name (Genus species) and a confidence score between 0 and 1, separated by a comma. For example: 'Erithacus rubecula, 0.85'"},
+                        {"type": "image_url", "image_url": {"url": image_b64}}
+                    ]
+                }
+            ]
+            
+            result = hf_client.chat.completions.create(
+                messages=messages,
+                model=HF_IMAGE_MODEL,
+                max_tokens=50
             )
-            # The result is a string
-            if isinstance(result, str) and result.strip():
-                text = result.strip()
+            
+            # Extract the generated text
+            if hasattr(result, 'choices') and len(result.choices) > 0:
+                text = result.choices[0].message.content.strip()
+                print(f"DEBUG: HF LLaVA raw response: '{text}'")
+                
                 # Try to parse the text as "Genus species, confidence"
-                # Remove any extra text
-                # We'll look for a pattern: something like "Genus species, 0.85"
-                # But the model might not follow the format exactly.
-                # We'll use the parse_gemini_response function which expects "Specie: ..."
-                # Let's instead try to extract the scientific name and confidence from the text.
-                # We'll split by comma and take the first part as the species and the second as confidence.
                 parts = text.split(',')
                 if len(parts) >= 2:
                     species_candidate = parts[0].strip()
@@ -182,9 +201,8 @@ async def identify_image(file_path: Path) -> dict:
                             confidence = confidence_candidate
                         else:
                             # If confidence is out of range, try to extract a number from the text
-                            # Use regex to find a float
                             import re
-                            numbers = re.findall(r"[0-9]*\.?[0-9]+", text)
+                            numbers = re.findall(r"[0-9]*\\.?[0-9]+", text)
                             if numbers:
                                 try:
                                     confidence_candidate = float(numbers[0])
@@ -205,9 +223,11 @@ async def identify_image(file_path: Path) -> dict:
                     species = "Sconosciuta"
                 return {"species": species, "confidence": confidence, "source": "Hugging Face LLaVA"}
             else:
-                print("DEBUG: HF LLaVA returned empty result")
+                print("DEBUG: HF LLaVA returned empty or unexpected result")
         except Exception as e:
             print(f"DEBUG: Hugging Face Image error: {e}")
+            import traceback
+            traceback.print_exc()
 
     return {"species": "Sconosciuta", "confidence": 0.0, "source": "error"}
 
@@ -244,7 +264,11 @@ async def identify_audio(file_path: Path) -> dict:
                     "confidence": confidence,
                     "source": "Hugging Face AST"
                 }
+            else:
+                print("DEBUG: HF AST returned empty result")
         except Exception as e:
             print(f"DEBUG: Hugging Face Audio error: {e}")
+            import traceback
+            traceback.print_exc()
 
     return {"species": "Sconosciuta", "confidence": 0.0, "source": "error"}
