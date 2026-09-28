@@ -1,0 +1,250 @@
+import uuid
+import random
+import asyncio
+import mimetypes
+from PIL import Image
+import io
+import re
+from pathlib import Path
+from typing import Optional, List
+from db import supabase
+from config import config
+from constants import (
+    OBSERVATION_METHODS,
+    MOCK_SPECIES_IMAGES,
+    MOCK_SPECIES_AUDIO
+)
+from huggingface_hub import InferenceClient
+
+# Hugging Face API Setup
+HF_TOKEN = config.HUGGINGFACE_API_KEY
+HF_IMAGE_MODEL = "llava-hf/llava-1.5-7b-hf"
+HF_AUDIO_MODEL = "MIT/ast-finetuned-audioset-10-10-0.4593"
+
+# Initialize Hugging Face Inference Client
+hf_client = None
+if HF_TOKEN:
+    hf_client = InferenceClient(token=HF_TOKEN)
+    print("DEBUG: Hugging Face Inference Client initialized")
+else:
+    print("DEBUG: WARNING: HUGGINGFACE_API_KEY not found in configuration.")
+
+# Mapping from AudioSet labels to scientific names (for alert matching)
+# AudioSet uses English common names, our reference uses scientific names
+AUDIOSET_TO_SCIENTIFIC = {
+    # Birds from reference lists
+    "Bird": "Passer domesticus",  # generic fallback
+    "Songbird": "Turdus merula",
+    "Robin": "Erithacus rubecula",
+    "Nightingale": "Luscinia megarhynchos",
+    "Cuckoo": "Cuculus canorus",
+    "Owl": "Strix aluco",
+    "Woodpecker": "Dendrocopos major",
+    "Green woodpecker": "Picus viridis",
+    "Golden oriole": "Oriolus oriolus",
+    "Hoopoe": "Upupa epops",
+    "Raven": "Corvus corax",
+    "Heron": "Ardea cinerea",
+    "Purple heron": "Ardea purpurea",
+    "Night heron": "Nycticorax nycticorax",
+    "Stork": "Ciconia ciconia",
+    "Eagle": "Aquila chrysaetos",
+    "Short-toed snake eagle": "Circaetus gallicus",
+    "Black kite": "Milvus migrans",
+    # Amphibians
+    "Frog": "Rana temporaria",
+    "Toad": "Bufo bufo",
+    "Tree frog": "Hyla arborea",
+    "Yellow-bellied toad": "Bombina pachypus",
+    "Newt": "Triturus carnifex",
+    # Mammals
+    "Fox": "Vulpes vulpes",
+    "Otter": "Lutra lutra",
+    "Wolf": "Canis lupus",
+    "Wild boar": "Sus scrofa",
+    "Deer": "Cervus elaphus",
+    "Coypu": "Myocastor coypus",
+    "Nutria": "Myocastor coypus",
+}
+
+async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -> str:
+    ext = Path(filename).suffix.lower()
+    file_id = str(uuid.uuid4())
+    path = f"stations/{station_id}/{file_id}{ext}"
+
+    if not config.SUPABASE_STORAGE_BUCKET:
+        raise Exception("SUPABASE_STORAGE_BUCKET non configurato nel server")
+
+    manual_mimes = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".wav": "audio/wav",
+        ".mp3": "audio/mpeg",
+        ".ogg": "audio/ogg",
+    }
+
+    mime_type = manual_mimes.get(ext)
+    if not mime_type:
+        mime_type, _ = mimetypes.guess_type(filename)
+        if not mime_type:
+            mime_type = "application/octet-stream"
+
+    # Retry logic for storage timeouts and duplicate handling
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            res = supabase.storage.from_(config.SUPABASE_STORAGE_BUCKET).upload(
+                path=path,
+                file=file_bytes,
+                file_options={"content-type": mime_type}
+            )
+            if not res:
+                raise Exception("Il server di Storage ha rifiutato l'upload (risposta vuota)")
+            return supabase.storage.from_(config.SUPABASE_STORAGE_BUCKET).get_public_url(path)
+        except Exception as e:
+            # Handle Duplicate error (409) as success: the file is already there
+            if "Duplicate" in str(e) or "409" in str(e):
+                print(f"DEBUG: File already exists in storage (409 Duplicate), treating as success.")
+                return supabase.storage.from_(config.SUPABASE_STORAGE_BUCKET).get_public_url(path)
+
+            if attempt < max_retries - 1:
+                wait_time = (attempt + 1) * 2
+                print(f"DEBUG: Storage upload timeout/error. Retrying in {wait_time}s... (Attempt {attempt+1})")
+                await asyncio.sleep(wait_time)
+            else:
+                print(f"CRITICAL STORAGE ERROR after {max_retries} attempts: {e}")
+                raise e
+
+def parse_gemini_response(text):
+    """
+    Extracts species and confidence from Gemini's response.
+    Expected format: 'Specie: [Name], Confidenza: [0.0-1.0]'
+    """
+    species = "Sconosciuta"
+    confidence = 0.0
+    
+    # Look for 'Specie: ...'
+    species_match = re.search(r"Specie:\s*([^,\n\.]+)", text)
+    if species_match:
+        species = species_match.group(1).strip()
+    
+    # Look for 'Confidenza: ...'
+    conf_match = re.search(r"Confidenza:\s*([0-9.]+)", text)
+    if conf_match:
+        try:
+            confidence = float(conf_match.group(1))
+        except ValueError:
+            confidence = 0.0
+            
+    return species, confidence
+
+async def identify_image(file_path: Path) -> dict:
+    print(f"DEBUG: Starting image identification for {file_path.name}")
+    if config.DEMO_MODE:
+        mock = random.choice(MOCK_SPECIES_IMAGES).copy()
+        mock["confidence"] = round(mock["confidence"] + random.uniform(-0.05, 0.05), 2)
+        mock["source"] = "Demo Mode (Mock)"
+        return mock
+
+    # Use Hugging Face (LLaVA) as Primary
+    if hf_client:
+        try:
+            with open(file_path, "rb") as f:
+                img_bytes = f.read()
+
+            print(f"DEBUG: Calling Hugging Face LLaVA for {file_path.name}...")
+            # Use visual_question_answering to get the scientific name and confidence
+            # We ask the model to return the scientific name and a confidence score
+            result = hf_client.visual_question_answering(
+                image=img_bytes,
+                question="What is the scientific name of the animal in the image? Give the scientific name and a confidence score between 0 and 1, separated by a comma. For example: 'Erithacus rubecula, 0.85'",
+                model=HF_IMAGE_MODEL
+            )
+            # The result is a string
+            if isinstance(result, str) and result.strip():
+                text = result.strip()
+                # Try to parse the text as "Genus species, confidence"
+                # Remove any extra text
+                # We'll look for a pattern: something like "Genus species, 0.85"
+                # But the model might not follow the format exactly.
+                # We'll use the parse_gemini_response function which expects "Specie: ..."
+                # Let's instead try to extract the scientific name and confidence from the text.
+                # We'll split by comma and take the first part as the species and the second as confidence.
+                parts = text.split(',')
+                if len(parts) >= 2:
+                    species_candidate = parts[0].strip()
+                    try:
+                        confidence_candidate = float(parts[1].strip())
+                        # Validate confidence is between 0 and 1
+                        if 0.0 <= confidence_candidate <= 1.0:
+                            species = species_candidate
+                            confidence = confidence_candidate
+                        else:
+                            # If confidence is out of range, try to extract a number from the text
+                            # Use regex to find a float
+                            import re
+                            numbers = re.findall(r"[0-9]*\.?[0-9]+", text)
+                            if numbers:
+                                try:
+                                    confidence_candidate = float(numbers[0])
+                                    if 0.0 <= confidence_candidate <= 1.0:
+                                        confidence = confidence_candidate
+                                        species = species_candidate  # assume the first part is the species
+                                except ValueError:
+                                    pass
+                    except ValueError:
+                        pass
+                else:
+                    # If we can't split by comma, maybe the model returned just the scientific name
+                    # We'll set a default confidence
+                    species = text
+                    confidence = 0.8  # default confidence
+                # Ensure species is not empty
+                if not species:
+                    species = "Sconosciuta"
+                return {"species": species, "confidence": confidence, "source": "Hugging Face LLaVA"}
+            else:
+                print("DEBUG: HF LLaVA returned empty result")
+        except Exception as e:
+            print(f"DEBUG: Hugging Face Image error: {e}")
+
+    return {"species": "Sconosciuta", "confidence": 0.0, "source": "error"}
+
+async def identify_audio(file_path: Path) -> dict:
+    print(f"DEBUG: Starting audio identification for {file_path.name}")
+    if config.DEMO_MODE:
+        mock = random.choice(MOCK_SPECIES_AUDIO).copy()
+        mock["confidence"] = round(mock["confidence"] + random.uniform(-0.05, 0.05), 2)
+        mock["source"] = "Demo Mode (Mock)"
+        return mock
+
+    # Use Hugging Face (AST) as Primary
+    if hf_client:
+        try:
+            with open(file_path, "rb") as f:
+                audio_bytes = f.read()
+
+            print(f"DEBUG: Calling Hugging Face AST for {file_path.name}...")
+            result = hf_client.audio_classification(
+                audio_bytes,
+                model=HF_AUDIO_MODEL
+            )
+            # result is a list of dicts with 'label' and 'score'
+            if isinstance(result, list) and len(result) > 0:
+                top_match = max(result, key=lambda x: x.get("score", 0))
+                audioset_label = top_match.get("label", "Unknown")
+                confidence = round(top_match.get("score", 0.0), 2)
+
+                # Map AudioSet label to scientific name if possible
+                scientific_name = AUDIOSET_TO_SCIENTIFIC.get(audioset_label, audioset_label)
+
+                return {
+                    "species": scientific_name,
+                    "confidence": confidence,
+                    "source": "Hugging Face AST"
+                }
+        except Exception as e:
+            print(f"DEBUG: Hugging Face Audio error: {e}")
+
+    return {"species": "Sconosciuta", "confidence": 0.0, "source": "error"}
