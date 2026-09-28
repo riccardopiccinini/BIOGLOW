@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Header, Depends, Form
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Header, Depends, Form, BackgroundTasks
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, List
@@ -151,7 +151,7 @@ async def update_observation(id: str, data: dict, user=Depends(verify_token)):
 @app.get("/alerts")
 async def get_all_alerts(status: Optional[str] = None):
     try:
-        return await get_alerts(status=status)
+        return await get_alerts(status)
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e), "type": type(e).__name__})
 
@@ -169,54 +169,51 @@ async def get_station(station_id: str):
         raise HTTPException(status_code=404, detail="Stazione non trovata")
     return detail
 
-async def process_single_observation(file_bytes, filename, method, station_id, date_time):
-    """Helper to process a single observation to reuse in single and batch endpoints."""
-    tmp_path = Path(f"/tmp/{filename}")
-    with open(tmp_path, "wb") as f:
-        f.write(file_bytes)
+async def run_ai_analysis(observation_id: str, file_path: Path, method: str):
+    """Background task to perform AI identification without blocking the HTTP response."""
+    try:
+        if method == "image":
+            result = await identify_image(file_path)
+        elif method == "audio":
+            result = await identify_audio(file_path)
+        else:
+            return
 
-    if method == "image":
-        result = await identify_image(tmp_path)
-    elif method == "audio":
-        result = await identify_audio(tmp_path)
-    else:
-        raise HTTPException(status_code=400, detail="Metodo non supportato")
+        confidence = result.get("confidence", 0.0)
+        species = result.get("species", "Sconosciuta")
+        
+        if confidence >= CONFIDENCE_THRESHOLDS["auto_confirm"]:
+            verification_status = "confirmed"
+        elif confidence >= CONFIDENCE_THRESHOLDS["min_acceptable"]:
+            verification_status = "pending"
+        else:
+            verification_status = "excluded"
 
-    media_url = await upload_to_storage(file_bytes, filename, station_id)
+        # Update the observation in DB
+        update_data = {
+            "species": species,
+            "confidence": confidence,
+            "verification_status": verification_status
+        }
+        
+        # We use a direct Supabase update since update_observation_status only handles verification_status
+        supabase.table("osservazioni").update(update_data).eq("id", observation_id).execute()
+        
+        # Trigger alert check
+        obs = await get_observation_by_id(observation_id)
+        if obs:
+            await check_and_create_alert({**obs, "confidence": confidence})
 
-    confidence = result.get("confidence", 0.0) if result else 0.0
-    species = result.get("species", "Sconosciuta") if result else "Sconosciuta"
-    
-    if confidence >= CONFIDENCE_THRESHOLDS["auto_confirm"]:
-        verification_status = "confirmed"
-    elif confidence >= CONFIDENCE_THRESHOLDS["min_acceptable"]:
-        verification_status = "pending"
-    else:
-        verification_status = "excluded"
+        # Clean up temp file
+        if file_path.exists():
+            file_path.unlink()
 
-    observation = {
-        "species": species,
-        "method": method,
-        "media_url": media_url,
-        "station_id": station_id,
-        "confidence": confidence,
-        "verification_status": verification_status,
-        "date_time": date_time or datetime.now(timezone.utc).isoformat()
-    }
-
-    save_res = await save_observation(observation)
-    if save_res and save_res.data and len(save_res.data) > 0:
-        obs_data = save_res.data[0]
-        if obs_data:
-            obs_id = obs_data.get("id")
-            if obs_id:
-                await check_and_create_alert({**observation, "id": obs_id})
-                return {"observation_id": obs_id, "species": species, "confidence": confidence}
-
-    return None
+    except Exception as e:
+        print(f"Background AI Error for obs {observation_id}: {e}")
 
 @app.post("/observations")
 async def receive_observation(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     method: str = "image",
     station_id: str = Query(...),
@@ -225,28 +222,45 @@ async def receive_observation(
     if not await station_exists(station_id):
         raise HTTPException(status_code=400, detail=f"Stazione {station_id} non valida")
 
-    res = await process_single_observation(
-        await file.read(), 
-        file.filename, 
-        method, 
-        station_id, 
-        date_time
-    )
-    
-    if res:
-        return JSONResponse(content=res)
-    
-    raise HTTPException(status_code=500, detail="Errore nel salvataggio dell'osservazione")
+    # 1. Save file to temp path
+    tmp_path = Path(f"/tmp/{file.filename}")
+    with open(tmp_path, "wb") as f:
+        f.write(await file.read())
+
+    # 2. Upload to permanent storage
+    with open(tmp_path, "rb") as f:
+        file_bytes = f.read()
+        media_url = await upload_to_storage(file_bytes, file.filename, station_id)
+
+    # 3. Save initial observation as "Analyzing..."
+    observation = {
+        "species": "Analisi in corso...",
+        "method": method,
+        "media_url": media_url,
+        "station_id": station_id,
+        "confidence": 0.0,
+        "verification_status": "pending",
+        "date_time": date_time or datetime.now(timezone.utc).isoformat()
+    }
+
+    save_res = await save_observation(observation)
+    if not save_res or not save_res.data:
+        raise HTTPException(status_code=500, detail="Errore nel salvataggio iniziale dell'osservazione")
+
+    obs_id = save_res.data[0]["id"]
+
+    # 4. Trigger AI analysis in background
+    background_tasks.add_task(run_ai_analysis, obs_id, tmp_path, method)
+
+    # 5. Return immediate response to client
+    return JSONResponse(content={"observation_id": obs_id, "status": "queued", "species": "Analisi in corso..."})
 
 @app.post("/observations/batch")
 async def receive_observations_batch(
+    background_tasks: BackgroundTasks,
     station_id: str = Query(...),
-    batch_data: str = Form(...) # Expects a JSON string with list of {filename, method, date_time, content_base64}
+    batch_data: str = Form(...)
 ):
-    """
-    Endpoint for offline queue: allows uploading multiple observations stored on the station.
-    batch_data should be a JSON list of observation details.
-    """
     if not await station_exists(station_id):
         raise HTTPException(status_code=400, detail=f"Stazione {station_id} non valida")
 
@@ -255,26 +269,38 @@ async def receive_observations_batch(
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Formato batch_data non valido")
 
-    results = []
+    processed_ids = []
     for obs in observations_list:
         try:
-            # In a real scenario, files might be sent in a separate multipart request or as base64 in batch_data
-            # For this implementation, we expect base64 content if provided, or we simulate it
             import base64
             content = base64.b64decode(obs.get("content_base64", " ")) if "content_base64" in obs else b"dummy data"
+            filename = obs.get("filename", "unknown")
             
-            res = await process_single_observation(
-                content, 
-                obs.get("filename", "unknown"), 
-                obs.get("method", "image"), 
-                station_id, 
-                obs.get("date_time")
-            )
-            results.append({"status": "success", "result": res})
-        except Exception as e:
-            results.append({"status": "error", "error": str(e)})
+            tmp_path = Path(f"/tmp/{filename}")
+            with open(tmp_path, "wb") as f:
+                f.write(content)
 
-    return JSONResponse(content={"processed": len(observations_list), "results": results})
+            media_url = await upload_to_storage(content, filename, station_id)
+
+            observation = {
+                "species": "Analisi in corso...",
+                "method": obs.get("method", "image"),
+                "media_url": media_url,
+                "station_id": station_id,
+                "confidence": 0.0,
+                "verification_status": "pending",
+                "date_time": obs.get("date_time") or datetime.now(timezone.utc).isoformat()
+            }
+
+            save_res = await save_observation(observation)
+            if save_res and save_res.data:
+                obs_id = save_res.data[0]["id"]
+                background_tasks.add_task(run_ai_analysis, obs_id, tmp_path, observation["method"])
+                processed_ids.append(obs_id)
+        except Exception as e:
+            print(f"Batch processing error for {obs.get('filename')}: {e}")
+
+    return JSONResponse(content={"processed": len(processed_ids), "ids": processed_ids})
 
 @app.get("/reports/summary")
 async def get_summary_report(station_id: Optional[str] = None):
