@@ -19,7 +19,8 @@ from constants import (
 if config.GEMINI_API_KEY:
     print(f"DEBUG: Gemini API Key found. Initializing model...")
     genai.configure(api_key=config.GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # UPDATED: Using the latest Gemini 3.8 Flash for superior animal recognition
+    model = genai.GenerativeModel('gemini-3.8-flash')
 else:
     print("DEBUG: WARNING: GEMINI_API_KEY not found in configuration.")
     model = None
@@ -71,8 +72,6 @@ async def identify_image(file_path: Path) -> dict:
     if model:
         try:
             img = Image.open(file_path)
-            # MODIFIED: Chain-of-Thought prompting. Ask AI to describe and then name.
-            # This significantly improves recognition accuracy.
             prompt = (
                 "You are an expert wildlife biologist. "
                 "1. Describe the animal features you see in the image. "
@@ -83,13 +82,12 @@ async def identify_image(file_path: Path) -> dict:
             
             loop = asyncio.get_event_loop()
             def call_gemini():
-                print("DEBUG: Sending image to Gemini...")
+                print("DEBUG: Sending image to Gemini 3.8 Flash...")
                 response = model.generate_content([prompt, img])
                 if response.candidates and response.candidates[0].content.parts:
                     text = response.text.strip()
                     print(f"DEBUG: Gemini Image Raw Response: {text}")
                     
-                    # Extract only the species name from 'Specie: [Name]'
                     if "Specie:" in text:
                         species = text.split("Specie:")[-1].strip()
                     else:
@@ -105,7 +103,7 @@ async def identify_image(file_path: Path) -> dict:
             return {
                 "species": species,
                 "confidence": 0.70,
-                "source": "Google Gemini"
+                "source": "Google Gemini 3.8"
             }
         except Exception as e:
             print(f"DEBUG: Gemini Image error: {str(e)}")
@@ -139,7 +137,6 @@ async def identify_audio(file_path: Path) -> dict:
                 print("DEBUG: Waiting for audio to be processed...")
                 await asyncio.sleep(2)
 
-            # MODIFIED: Chain-of-Thought prompting for audio
             prompt = (
                 "You are an expert bioacoustician. "
                 "1. Describe the characteristics of the sound (pitch, rhythm, pattern). "
@@ -149,7 +146,7 @@ async def identify_audio(file_path: Path) -> dict:
             )
             
             def call_gemini_audio():
-                print("DEBUG: Sending audio prompt to Gemini...")
+                print("DEBUG: Sending audio prompt to Gemini 3.8 Flash...")
                 response = model.generate_content([prompt, audio_file])
                 if response.candidates and response.candidates[0].content.parts:
                     text = response.text.strip()
@@ -172,7 +169,7 @@ async def identify_audio(file_path: Path) -> dict:
             return {
                 "species": species,
                 "confidence": 0.70,
-                "source": "Google Gemini"
+                "source": "Google Gemini 3.8"
             }
         except Exception as e:
             print(f"DEBUG: Gemini Audio error: {str(e)}")
