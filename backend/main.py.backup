@@ -67,10 +67,6 @@ async def health():
             content={"status": "error", "db": f"disconnected: {str(e)}"}
         )
 
-
-@app.get("/")
-async def root():
-    return {"message": "BIOGLOW Biodiversity Monitoring System is running", "status": "ok", "docs": "/docs"}
 @app.get("/observations/stats")
 async def observations_stats(
     station_id: Optional[str] = None,
