@@ -126,5 +126,9 @@ async def get_station_detail(station_id: str):
     }
 
 async def station_exists(station_id: str) -> bool:
-    res = supabase.table("stations").select("id").eq("id", station_id).execute()
-    return len(res.data) > 0 if res.data else False
+    try:
+        res = supabase.table("stations").select("id").eq("id", station_id).execute()
+        return len(res.data) > 0 if res.data else False
+    except Exception as e:
+        print(f"DB Error in station_exists: {e}")
+        raise e

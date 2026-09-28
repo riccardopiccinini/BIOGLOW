@@ -229,8 +229,14 @@ async def receive_observation(
     station_id: str = Query(...),
     date_time: Optional[str] = None
 ):
-    if not await station_exists(station_id):
-        raise HTTPException(status_code=400, detail=f"Stazione {station_id} non valida")
+    try:
+        if not await station_exists(station_id):
+            raise HTTPException(status_code=400, detail=f"Stazione {station_id} non valida")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"DB Timeout/Error in receive_observation: {e}")
+        return JSONResponse(status_code=503, content={"error": "Servizio database temporaneamente non disponibile"})
 
     # Save file to temp path
     tmp_path = Path(f"/tmp/{file.filename}")
@@ -265,8 +271,14 @@ async def receive_observations_batch(
     station_id: str = Query(...),
     batch_data: str = Form(...)
 ):
-    if not await station_exists(station_id):
-        raise HTTPException(status_code=400, detail=f"Stazione {station_id} non valida")
+    try:
+        if not await station_exists(station_id):
+            raise HTTPException(status_code=400, detail=f"Stazione {station_id} non valida")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"DB Timeout/Error in receive_observations_batch: {e}")
+        return JSONResponse(status_code=503, content={"error": "Servizio database temporaneamente non disponibile"})
 
     try:
         observations_list = json.loads(batch_data)

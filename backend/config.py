@@ -7,10 +7,12 @@ class Config:
     SUPABASE_URL = os.getenv("SUPABASE_URL")
     SUPABASE_KEY = os.getenv("SUPABASE_KEY")
     SUPABASE_STORAGE_BUCKET = os.getenv("SUPABASE_STORAGE_BUCKET", "observations")
-    
-    # Gemini AI
+
+    # AI APIs
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-    
+    HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
     # Modalità Demo: se True, ignora le API e restituisce dati mock
     DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() == "true"
     

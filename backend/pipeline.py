@@ -16,7 +16,7 @@ from constants import (
     MOCK_SPECIES_AUDIO
 )
 
-# --- GEMINI AI SETUP ---
+# --- AI SETUP ---
 if config.GEMINI_API_KEY:
     print(f"DEBUG: Gemini API Key found. Initializing model...")
     genai.configure(api_key=config.GEMINI_API_KEY)
@@ -24,6 +24,29 @@ if config.GEMINI_API_KEY:
 else:
     print("DEBUG: WARNING: GEMINI_API_KEY not found in configuration.")
     model = None
+
+# Hugging Face API Setup
+HF_TOKEN = config.HUGGINGFACE_API_KEY
+HF_IMAGE_MODEL = "llava-hf/llava-1.5-7b-hf"
+HF_AUDIO_MODEL = "MIT/ast-finetuned-audioset"
+
+async def call_hf_api(model_id: str, data: bytes, prompt: Optional[str] = None):
+    """Generic helper to call Hugging Face Inference API"""
+    headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
+    payload = {"inputs": data}
+    if prompt:
+        payload["parameters"] = {"prompt": prompt}
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"https://api-inference.huggingface.co/models/{model_id}",
+            headers=headers,
+            content=data, # Some models take raw bytes as 'inputs'
+            timeout=30.0
+        )
+        if response.status_code != 200:
+            raise Exception(f"HF API Error: {response.status_code} - {response.text}")
+        return response.json()
 
 async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -> str:
     ext = Path(filename).suffix.lower()
@@ -92,54 +115,21 @@ async def identify_image(file_path: Path) -> dict:
         mock["source"] = "Demo Mode (Mock)"
         return mock
 
-    if model:
+    # Use Hugging Face (LLaVA) as Primary
+    if HF_TOKEN:
         try:
-            img = Image.open(file_path)
-            prompt = (
-                "You are an expert wildlife biologist. "
-                "1. Describe the animal features you see. "
-                "2. Identify the most likely species. "
-                "3. Provide the final answer in this exact format: 'Specie: [Common Name in Italian], Confidenza: [0.0-1.0]'. "
-                "The confidence should represent your certainty. "
-                "If it's not an animal, return 'Specie: Sconosciuta, Confidenza: 0.0'."
-            )
-            
-            loop = asyncio.get_event_loop()
-            
-            # Retry logic for 429 (Quota Exceeded)
-            max_retries = 5
-            for attempt in range(max_retries):
-                try:
-                    def call_gemini():
-                        print(f"DEBUG: Sending image to Gemini (Attempt {attempt+1})...")
-                        response = model.generate_content([prompt, img])
-                        if response.candidates and response.candidates[0].content.parts:
-                            return response.text.strip()
-                        return "Sconosciuta"
+            with open(file_path, "rb") as f:
+                img_bytes = f.read()
 
-                    text = await loop.run_in_executor(None, call_gemini)
-                    print(f"DEBUG: Gemini Image Raw Response: {text}")
-                    species, confidence = parse_gemini_response(text)
-                    
-                    if not species or species.lower() == "sconosciuta":
-                        species = "Specie non identificata"
+            print(f"DEBUG: Calling Hugging Face LLaVA for {file_path.name}...")
+            result = await call_hf_api(HF_IMAGE_MODEL, img_bytes, "Identify the animal in this image in Italian. Format: Specie: [Name], Confidenza: [0.0-1.0]")
 
-                    return {
-                        "species": species,
-                        "confidence": confidence,
-                        "source": "Google Gemini 3.8"
-                    }
-                except Exception as e:
-                    if "429" in str(e):
-                        wait_time = (attempt + 1) * 10
-                        print(f"DEBUG: Quota exceeded. Retrying in {wait_time}s...")
-                        await asyncio.sleep(wait_time)
-                    else:
-                        raise e
-            
-            raise Exception("Max retries reached for Gemini API")
+            if isinstance(result, list) and len(result) > 0:
+                text = result[0].get("generated_text", "Sconosciuta")
+                species, confidence = parse_gemini_response(text)
+                return {"species": species, "confidence": confidence, "source": "Hugging Face LLaVA"}
         except Exception as e:
-            print(f"DEBUG: Gemini Image error: {str(e)}")
+            print(f"DEBUG: Hugging Face Image error: {e}")
 
     return {"species": "Sconosciuta", "confidence": 0.0, "source": "error"}
 
@@ -151,68 +141,23 @@ async def identify_audio(file_path: Path) -> dict:
         mock["source"] = "Demo Mode (Mock)"
         return mock
 
-    if model:
+    # Use Hugging Face (AST) as Primary
+    if HF_TOKEN:
         try:
-            loop = asyncio.get_event_loop()
-            
-            # Upload file
-            audio_file = await loop.run_in_executor(
-                None, lambda: genai.upload_file(path=str(file_path))
-            )
-            
-            # Wait for processing
-            while True:
-                file_info = await loop.run_in_executor(None, lambda: genai.get_file(audio_file.name))
-                if file_info.state.name == 'ACTIVE':
-                    break
-                if file_info.state.name == 'FAILED':
-                    raise Exception("Gemini failed to process the audio file.")
-                await asyncio.sleep(2)
+            with open(file_path, "rb") as f:
+                audio_bytes = f.read()
 
-            prompt = (
-                "You are an expert bioacoustician. "
-                "1. Describe the characteristics of the sound. "
-                "2. Identify the animal species based on these vocalizations. "
-                "3. Provide the final answer in this exact format: 'Specie: [Common Name in Italian], Confidenza: [0.0-1.0]'. "
-                "The confidence should represent your certainty. "
-                "If it's not an animal sound, return 'Specie: Sconosciuta, Confidenza: 0.0'."
-            )
-            
-            # Retry logic for 429
-            max_retries = 5
-            for attempt in range(max_retries):
-                try:
-                    def call_gemini_audio():
-                        print(f"DEBUG: Sending audio prompt to Gemini (Attempt {attempt+1})...")
-                        response = model.generate_content([prompt, audio_file])
-                        if response.candidates and response.candidates[0].content.parts:
-                            return response.text.strip()
-                        return "Sconosciuta"
+            print(f"DEBUG: Calling Hugging Face AST for {file_path.name}...")
+            result = await call_hf_api(HF_AUDIO_MODEL, audio_bytes)
 
-                    text = await loop.run_in_executor(None, call_gemini_audio)
-                    print(f"DEBUG: Gemini Audio Raw Response: {text}")
-                    species, confidence = parse_gemini_response(text)
-                    
-                    await loop.run_in_executor(None, lambda: genai.delete_file(audio_file.name))
-                    
-                    if not species or species.lower() == "sconosciuta":
-                        species = "Suono non identificato"
-
-                    return {
-                        "species": species,
-                        "confidence": confidence,
-                        "source": "Google Gemini 3.8"
-                    }
-                except Exception as e:
-                    if "429" in str(e):
-                        wait_time = (attempt + 1) * 10
-                        print(f"DEBUG: Quota exceeded. Retrying in {wait_time}s...")
-                        await asyncio.sleep(wait_time)
-                    else:
-                        raise e
-            
-            raise Exception("Max retries reached for Gemini API")
+            if isinstance(result, list) and len(result) > 0:
+                top_match = max(result, key=lambda x: x.get("score", 0))
+                return {
+                    "species": top_match.get("label", "Sconosciuta"),
+                    "confidence": round(top_match.get("score", 0.0), 2),
+                    "source": "Hugging Face AST"
+                }
         except Exception as e:
-            print(f"DEBUG: Gemini Audio error: {str(e)}")
+            print(f"DEBUG: Hugging Face Audio error: {e}")
 
     return {"species": "Sconosciuta", "confidence": 0.0, "source": "error"}
