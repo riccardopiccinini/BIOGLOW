@@ -310,7 +310,7 @@ async def receive_observations_batch(
             if save_res and save_res.data:
                 obs_id = save_res.data[0]["id"]
                 # Correct argument order
-                background_tasks.add_task(run_//full_pipeline_background, obs_id, tmp_path, observation["method"], filename, station_id)
+                background_tasks.add_task(run_full_pipeline_background, obs_id, tmp_path, observation["method"], filename, station_id)
                 processed_count += 1
         except Exception as e:
             print(f"Batch queuing error for {obs.get('filename')}: {e}")

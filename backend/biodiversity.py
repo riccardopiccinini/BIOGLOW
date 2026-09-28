@@ -25,6 +25,39 @@ def shannon_index(observations):
         h -= p * math.log(p)
     return h
 
+def _normalize_iso_string(dt_str):
+    """Normalizes ISO strings to be compatible with datetime.fromisoformat in Python < 3.11."""
+    if not dt_str:
+        return None
+
+    # Handle 'Z' suffix
+    dt_str = dt_str.replace("Z", "+00:00")
+
+    # Handle microsecond precision (Python 3.10 requires exactly 0 or 6 digits)
+    if "." in dt_str:
+        parts = dt_str.split(".")
+        main, rest = parts[0], parts[1]
+
+        # Find where the timezone starts (+ or -)
+        tz_start = -1
+        for i, char in enumerate(rest):
+            if char in "+-":
+                tz_start = i
+                break
+
+        if tz_start != -1:
+            micros = rest[:tz_start]
+            tz = rest[tz_start:]
+        else:
+            micros = rest
+            tz = ""
+
+        # Pad microseconds to 6 digits
+        micros = micros.ljust(6, "0")[:6]
+        dt_str = f"{main}.{micros}{tz}"
+
+    return dt_str
+
 def _group_observations(interval="month", filters=None):
     """Internal: group observations by week/month and return dict {date_key: [obs,...]}."""
     supabase = get_supabase()
@@ -50,7 +83,8 @@ def _group_observations(interval="month", filters=None):
             continue
 
         try:
-            dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+            normalized = _normalize_iso_string(dt_str)
+            dt = datetime.fromisoformat(normalized)
             if interval == "week":
                 start_of_week = dt - timedelta(days=dt.weekday())
                 key = start_of_week.strftime("%Y-%m-%d")

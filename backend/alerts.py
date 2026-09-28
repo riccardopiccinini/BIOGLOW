@@ -32,8 +32,12 @@ async def check_and_create_alert(observation: dict):
             "alert_type": alert_type,
             "status": "pending",
         }
-        res = supabase.table("alerts").insert(alert).execute()
-        return res
+        try:
+            res = supabase.table("alerts").insert(alert).execute()
+            return res
+        except Exception as e:
+            print(f"DEBUG: Failed to create alert for {species}: {e}")
+            return None
     return None
 
 async def get_alerts(status_filter=None):

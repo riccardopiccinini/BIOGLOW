@@ -31,6 +31,44 @@ HF_TOKEN = config.HUGGINGFACE_API_KEY
 HF_IMAGE_MODEL = "llava-hf/llava-1.5-7b-hf"
 HF_AUDIO_MODEL = "MIT/ast-finetuned-audioset"
 
+# Mapping from AudioSet labels to scientific names (for alert matching)
+# AudioSet uses English common names, our reference uses scientific names
+AUDIOSET_TO_SCIENTIFIC = {
+    # Birds from reference lists
+    "Bird": "Passer domesticus",  # generic fallback
+    "Songbird": "Turdus merula",
+    "Robin": "Erithacus rubecula",
+    "Nightingale": "Luscinia megarhynchos",
+    "Cuckoo": "Cuculus canorus",
+    "Owl": "Strix aluco",
+    "Woodpecker": "Dendrocopos major",
+    "Green woodpecker": "Picus viridis",
+    "Golden oriole": "Oriolus oriolus",
+    "Hoopoe": "Upupa epops",
+    "Raven": "Corvus corax",
+    "Heron": "Ardea cinerea",
+    "Purple heron": "Ardea purpurea",
+    "Night heron": "Nycticorax nycticorax",
+    "Stork": "Ciconia ciconia",
+    "Eagle": "Aquila chrysaetos",
+    "Short-toed snake eagle": "Circaetus gallicus",
+    "Black kite": "Milvus migrans",
+    # Amphibians
+    "Frog": "Rana temporaria",
+    "Toad": "Bufo bufo",
+    "Tree frog": "Hyla arborea",
+    "Yellow-bellied toad": "Bombina pachypus",
+    "Newt": "Triturus carnifex",
+    # Mammals
+    "Fox": "Vulpes vulpes",
+    "Otter": "Lutra lutra",
+    "Wolf": "Canis lupus",
+    "Wild boar": "Sus scrofa",
+    "Deer": "Cervus elaphus",
+    "Coypu": "Myocastor coypus",
+    "Nutria": "Myocastor coypus",
+}
+
 async def call_hf_api(model_id: str, data: bytes, prompt: Optional[str] = None):
     """Generic helper to call Hugging Face Inference API with retries for DNS/network errors"""
     headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
@@ -85,7 +123,7 @@ async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -
         if not mime_type:
             mime_type = "application/octet-stream"
 
-    # Retry logic for storage timeouts
+    # Retry logic for storage timeouts and duplicate handling
     max_retries = 3
     for attempt in range(max_retries):
         try:
@@ -98,6 +136,11 @@ async def upload_to_storage(file_bytes: bytes, filename: str, station_id: str) -
                 raise Exception("Il server di Storage ha rifiutato l'upload (risposta vuota)")
             return supabase.storage.from_(config.SUPABASE_STORAGE_BUCKET).get_public_url(path)
         except Exception as e:
+            # Handle Duplicate error (409) as success: the file is already there
+            if "Duplicate" in str(e) or "409" in str(e):
+                print(f"DEBUG: File already exists in storage (409 Duplicate), treating as success.")
+                return supabase.storage.from_(config.SUPABASE_STORAGE_BUCKET).get_public_url(path)
+
             if attempt < max_retries - 1:
                 wait_time = (attempt + 1) * 2
                 print(f"DEBUG: Storage upload timeout/error. Retrying in {wait_time}s... (Attempt {attempt+1})")
@@ -144,7 +187,7 @@ async def identify_image(file_path: Path) -> dict:
                 img_bytes = f.read()
 
             print(f"DEBUG: Calling Hugging Face LLaVA for {file_path.name}...")
-            result = await call_hf_api(HF_IMAGE_MODEL, img_bytes, "Identify the animal in this image in Italian. Format: Specie: [Name], Confidenza: [0.0-1.0]")
+            result = await call_hf_api(HF_IMAGE_MODEL, img_bytes, "Identify the animal species in this image. Return ONLY the scientific name (Latin binomial) in this exact format: 'Specie: [Genus species], Confidenza: [0.0-1.0]'. Example: 'Specie: Erithacus rubecula, Confidenza: 0.85'. If no animal, return 'Specie: Sconosciuta, Confidenza: 0.0'.")
 
             if isinstance(result, list) and len(result) > 0:
                 text = result[0].get("generated_text", "Sconosciuta")
@@ -174,9 +217,15 @@ async def identify_audio(file_path: Path) -> dict:
 
             if isinstance(result, list) and len(result) > 0:
                 top_match = max(result, key=lambda x: x.get("score", 0))
+                audioset_label = top_match.get("label", "Unknown")
+                confidence = round(top_match.get("score", 0.0), 2)
+
+                # Map AudioSet label to scientific name if possible
+                scientific_name = AUDIOSET_TO_SCIENTIFIC.get(audioset_label, audioset_label)
+
                 return {
-                    "species": top_match.get("label", "Sconosciuta"),
-                    "confidence": round(top_match.get("score", 0.0), 2),
+                    "species": scientific_name,
+                    "confidence": confidence,
                     "source": "Hugging Face AST"
                 }
         except Exception as e:

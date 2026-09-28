@@ -169,10 +169,10 @@ async def generate_summary_pdf(station_id=None):
         for obs in observations[:50]:
             species = str(obs.get("species", "N/A"))
             method = str(obs.get("method", "N/A"))
-            confidence = obs.get('confidence', 0)
+            confidence = obs.get('confidence', 0) or 0
             dt = obs.get("date_time")
             date_str = dt[:10] if dt and isinstance(dt, str) else "N/A"
-            
+
             if pdf.get_y() > 270:
                 pdf.add_page()
                 pdf.set_fill_color(230, 230, 230)
