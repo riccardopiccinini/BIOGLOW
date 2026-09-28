@@ -8,11 +8,12 @@ from PIL import Image
 import io
 import re
 from pathlib import Path
+from typing import Optional
 from db import supabase
 from config import config
 from constants import (
-    OBSERVATION_METHODS, 
-    MOCK_SPECIES_IMAGES, 
+    OBSERVATION_METHODS,
+    MOCK_SPECIES_IMAGES,
     MOCK_SPECIES_AUDIO
 )
 
