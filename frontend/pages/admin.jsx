@@ -67,7 +67,7 @@ export default function AdminPanel() {
         <header className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Pannello di Validazione</h1>
-            <p className="text-muted dark:text-gray-400">Revisione scientifica delle osservazioni AI con confidenza < 85%</p>
+            <p className="text-muted dark:text-gray-400">Revisione scientifica delle osservazioni AI con confidenza &lt; 85%</p>
           </div>
           <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-4 py-2 rounded-full text-sm font-medium border border-blue-100 dark:border-blue-800">
             Modalità Amministratore
@@ -101,7 +101,7 @@ export default function AdminPanel() {
               <>
                 <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                    Mostrando {observations.length} di {allObservations.length} osservazioni pendenti (confidenza < 85%)
+                    Mostrando {observations.length} di {allObservations.length} osservazioni pendenti (confidenza &lt; 85%)
                   </p>
                 </div>
                 <div className="grid grid-cols-1 gap-4">
