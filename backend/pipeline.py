@@ -144,7 +144,8 @@ def extract_species_from_filename(filename: str) -> Tuple[Optional[str], float]:
     """
     Extract species name from filename using pattern matching.
     Returns (species_name, confidence) or (None, 0.0) if not found.
-    Confidence values are randomized within ranges for testing accuracy variability.
+    Confidence values are randomized within specific ranges to ensure 
+    some values fall below the 85% confirmation threshold for testing.
     """
     # Remove file extension
     name_without_ext = Path(filename).stem
@@ -167,8 +168,9 @@ def extract_species_from_filename(filename: str) -> Tuple[Optional[str], float]:
                 if genus.lower() not in EXCLUDE_WORDS and species.lower() not in EXCLUDE_WORDS:
                     # Normalize to proper scientific name format: Genus_species (species lowercase)
                     normalized = f"{genus.lower().capitalize()}_{species.lower()}"
-                    # Random confidence between 86% and 96% for scientific name matches
-                    confidence = round(random.uniform(0.86, 0.96), 2)
+                    # Random confidence between 82% and 96% 
+                    # This gives us: 82-84.99% (below 85% threshold) and 85-96% (at/above threshold for auto-confirm)
+                    confidence = round(random.uniform(0.82, 0.96), 2)
                     return normalized, confidence  # High confidence for filename-based ID
     
     # 2. LOOK FOR COMMON NAMES IN THE FILENAME
@@ -195,8 +197,9 @@ def extract_species_from_filename(filename: str) -> Tuple[Optional[str], float]:
         # Usa boundary per evitare corrispondenze parziali tipo "fox" in "foxtrot"
         pattern = r'(^|[^a-zA-Z])' + re.escape(common_name) + r'([^a-zA-Z]|$)'
         if re.search(pattern, lower_name):
-            # Random confidence between 84% and 91% for common name matches
-            confidence = round(random.uniform(0.84, 0.91), 2)
+            # Random confidence between 78% and 92%
+            # This gives us: 78-84.99% (below 85% threshold) and 85-92% (at/above threshold)
+            confidence = round(random.uniform(0.78, 0.92), 2)
             return scientific_name, confidence  # Good confidence for common name match
     
     # 3. TRY TO EXTRACT ANY WORD PAIRS THAT MIGHT BE SCIENTIFIC NAMES (more flexible)
@@ -213,8 +216,9 @@ def extract_species_from_filename(filename: str) -> Tuple[Optional[str], float]:
                 if genus_lower not in EXCLUDE_WORDS and species_lower not in EXCLUDE_WORDS:
                     # Normalize to proper scientific name format
                     normalized = f"{genus.lower().capitalize()}_{species.lower()}"
-                    # Random confidence between 80% and 88% for flexible matches (some will be <85%)
-                    confidence = round(random.uniform(0.80, 0.88), 2)
+                    # Random confidence between 70% and 84%
+                    # This gives us: 70-84.99% (all below 85% threshold - guaranteed sub-threshold values for testing)
+                    confidence = round(random.uniform(0.70, 0.84), 2)
                     return normalized, confidence  # Moderate confidence for flexible match
     
     # 4. CHECK IF ANY KNOWN SCIENTIFIC NAME APPEARS AS SUBSTRING
@@ -222,20 +226,21 @@ def extract_species_from_filename(filename: str) -> Tuple[Optional[str], float]:
     for known in known_species:
         # Check for exact match with underscore (case insensitive)
         if known.lower() in lower_name.replace(' ', '_').replace('-', '_'):
-            # Random confidence between 85% and 92% for known species matches
-            confidence = round(random.uniform(0.85, 0.92), 2)
+            # Random confidence between 80% and 90%
+            # This gives us: 80-84.99% (below 85% threshold) and 85-90% (at/above threshold)
+            confidence = round(random.uniform(0.80, 0.90), 2)
             return known, confidence
         # Check for match with space instead of underscore
         known_space = known.replace('_', ' ')
         if known_space.lower() in lower_name:
-            # Random confidence between 85% and 92% for known species matches
-            confidence = round(random.uniform(0.85, 0.92), 2)
+            # Random confidence between 80% and 90%
+            confidence = round(random.uniform(0.80, 0.90), 2)
             return known, confidence
         # Check for match with hyphen instead of underscore
         known_hyphen = known.replace('_', '-')
         if known_hyphen.lower() in lower_name:
-            # Random confidence between 85% and 92% for known species matches
-            confidence = round(random.uniform(0.85, 0.92), 2)
+            # Random confidence between 80% and 90%
+            confidence = round(random.uniform(0.80, 0.90), 2)
             return known, confidence
     
     return None, 0.0
