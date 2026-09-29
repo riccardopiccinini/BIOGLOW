@@ -1,6 +1,6 @@
 import useSWR from "swr";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
-import { formatShortDate, fetcher, buildFilterParams, formatDate } from "../lib/utils";
+import { formatShortDate, fetcher, buildFilterParams } from "../lib/utils";
 import { CHART_COLORS, CHART_DEFAULTS } from "../lib/constants";
 
 export default function ShannonLineChart({ interval = "month", filters = {} }) {
@@ -14,24 +14,10 @@ export default function ShannonLineChart({ interval = "month", filters = {} }) {
   if (error) return <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-red-500 transition-colors">Errore nel caricamento dei dati Shannon</div>;
   if (!data || !Array.isArray(data)) return <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-gray-500 dark:text-gray-400 transition-colors">Caricamento dati...</div>;
 
-  const chartData = data.map((d) => {
-    let formattedDate;
-    if (d.date) {
-      if (interval === "month") {
-        // For monthly data, show only month and year (e.g., "Set 2026")
-        formattedDate = formatDate(d.date, "MMM yyyy");
-      } else {
-        // For weekly or other intervals, show day and month (e.g., "29 Set")
-        formattedDate = formatShortDate(d.date);
-      }
-    } else {
-      formattedDate = "N/A";
-    }
-    return {
-      date: formattedDate,
-      value: d.value ?? 0,
-    };
-  });
+  const chartData = data.map((d) => ({
+    date: d.date ? formatShortDate(d.date) : "N/A",
+    value: d.value ?? 0,
+  }));
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 transition-colors">

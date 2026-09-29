@@ -84,3 +84,52 @@ Lo script:
 4. In caso di problemi di connettività, fallback intelligente all'estrazione dai nomi file
 
 **Importante**: I valori di specie e confidenza mostrati sono quelli **realmente calcolati dal modello di ML del backend BIOGLOW**, non valori simulati o casuali. Questo soddisfa pienamente il requisito: "il valore deve corrispondere a quello che c'è nel sito".
+
+## 📈 Aggiornamento Grafico Indice di Shannon
+
+### Richiesta
+Modificare il grafico dell'indice di Shannon per visualizzare:
+- **Solo il mese** (non il giorno) quando i dati sono aggregati mensilmente
+- **Formato appropriato** per altri intervalli (settimanale, ecc.)
+
+### Modifica Implementata
+**File modificato:** `/sessions/kind-lucid-clarke/mnt/BIOGLOW/frontend/components/ShannonLineChart.jsx`
+
+### Cambiamenti principali:
+1. **Formattazione condizionale delle date** basata sul parametro `interval`:
+   - Quando `interval === "month"`: mostra formato "MMM yyyy" (es: "Set 2026")
+   - Quando `interval !== "month"`: usa il formato esistente "dd MMM" (es: "29 Set")
+
+2. **Codice implementato:**
+   ```javascript
+   const chartData = data.map((d) => {
+     let formattedDate;
+     if (d.date) {
+       if (interval === "month") {
+         // For monthly data, show only month and year (e.g., "Set 2026")
+         formattedDate = formatDate(d.date, "MMM yyyy");
+       } else {
+         // For weekly or other intervals, show day and month (e.g., "29 Set")
+         formattedDate = formatShortDate(d.date);
+       }
+     } else {
+       formattedDate = "N/A";
+     }
+     return {
+       date: formattedDate,
+       value: d.value ?? 0,
+     };
+   });
+   ```
+
+### Risultato
+- **Visualizzazione mensile:** L'asse X mostra solo mese e anno (es: "Set 2026", "Ott 2026")
+- **Visualizzazione settimanale:** L'asse X mostra giorno e mese (es: "29 Set", "06 Ott")
+- **Compatibilità mantenuta:** Tutte le funzionalità esistenti del grafico rimangono invariate
+- **Chiarezza migliorata:** Gli utenti possono immediatamente capire la granularità dei dati osservando il formato delle date sull'asse X
+
+### Verifica
+Le modifiche sono state testate e confermano che:
+- Quando l'admin dashboard imposta `interval="month"` (default), il grafico mostra solo mese/anno
+- Quando si passa a `interval="week"`, il grafico mostra giorno/mese
+- Nessun errore di compilazione o di runtime introdotto
