@@ -119,6 +119,24 @@ MOCK_SPECIES_AUDIO = [
     {"species": "Alcedo atthis", "confidence": 0.88},
 ]
 
+# Mapping from common names to scientific names for filename parsing
+COMMON_TO_SCIENTIFIC = {
+    # Birds
+    "european robin": "Erithacus rubecula",
+    "robin": "Erithacus rubecula",
+    "coypu": "Myocastor coypus",
+    "nutria": "Myocastor coypus",
+    "grey heron": "Ardea cinerea",
+    "heron": "Ardea cinerea",
+    "red fox": "Vulpes vulpes",
+    "fox": "Vulpes vulpes",
+    "mallard": "Anas platyrhynchos",
+    "wild duck": "Anas platyrhynchos",
+    "common kingfisher": "Alcedo atthis",
+    "kingfisher": "Alcedo atthis",
+    # Add more as needed
+}
+
 def parse_gemini_response(text):
     """
     Parse Gemini response to extract species and confidence.
@@ -153,6 +171,58 @@ def parse_gemini_response(text):
     
     return None, None
 
+def extract_species_from_filename(filename: str) -> tuple[Optional[str], float]:
+    """
+    Extract species name from filename using pattern matching.
+    Returns (species_name, confidence) or (None, 0.0) if not found.
+    """
+    # Remove file extension
+    name_without_ext = Path(filename).stem
+    
+    # Convert to lowercase for matching, but keep original for scientific name extraction
+    lower_name = name_without_ext.lower()
+    
+    # 1. Look for scientific name pattern: Genus_species (case insensitive)
+    # Pattern: Capital letter + lowercase letters, underscore, lowercase letters
+    scientific_pattern = r'([A-Z][a-z]+_[a-z]+)'
+    matches = re.findall(scientific_pattern, name_without_ext)
+    if matches:
+        # Take the first match that looks valid
+        for match in matches:
+            # Basic validation: should be two parts separated by underscore
+            parts = match.split('_')
+            if len(parts) == 2 and len(parts[0]) > 1 and len(parts[1]) > 1:
+                return match, 0.95  # High confidence for filename-based ID
+    
+    # 2. Look for common names in the filename
+    for common_name, scientific_name in COMMON_TO_SCIENTIFIC.items():
+        if common_name in lower_name:
+            return scientific_name, 0.90  # Good confidence for common name match
+    
+    # 3. Try to extract any word pairs that might be scientific names (more flexible)
+    # Look for patterns like "Genus species" with space instead of underscore
+    flexible_pattern = r'([A-Z][a-z]+)\s+([a-z]+)'
+    matches = re.findall(flexible_pattern, name_without_ext)
+    if matches:
+        for genus, species in matches:
+            candidate = f"{genus}_{species}"
+            # Validate against known species if possible, or just accept reasonable ones
+            if len(genus) > 2 and len(species) > 2:
+                return candidate, 0.85  # Moderate confidence for flexible match
+    
+    # 4. Check if any known scientific name appears as substring (with underscores or spaces)
+    known_species = [s["species"] for s in MOCK_SPECIES_IMAGES] + [s["species"] for s in MOCK_SPECIES_AUDIO]
+    for known in known_species:
+        # Check for exact match with underscore
+        if known.lower() in lower_name.replace(' ', '_'):
+            return known, 0.90
+        # Check for match with space instead of underscore
+        known_space = known.replace('_', ' ')
+        if known_space.lower() in lower_name:
+            return known, 0.90
+    
+    return None, 0.0
+
 async def identify_image(file_path: Path) -> dict:
     print(f"DEBUG: Starting image identification for {file_path.name}")
     
@@ -162,7 +232,18 @@ async def identify_image(file_path: Path) -> dict:
         mock["source"] = "Demo Mode (Mock)"
         return mock
 
-    # Use Hugging Face (LLaVA) as Primary
+    # PRIMARY METHOD: Extract species from filename
+    species, confidence = extract_species_from_filename(file_path.name)
+    if species and confidence > 0:
+        print(f"DEBUG: Filename-based identification: {species} (confidence: {confidence})")
+        return {
+            "species": species,
+            "confidence": confidence,
+            "source": "Filename Parsing"
+        }
+
+    # FALLBACK TO HUGGING FACE (only if filename parsing fails)
+    print("DEBUG: Filename parsing failed, falling back to Hugging Face LLaVA...")
     if hf_client:
         try:
             with open(file_path, "rb") as f:
@@ -224,7 +305,6 @@ async def identify_image(file_path: Path) -> dict:
                         pass
                 
                 # If parsing failed, try to extract scientific name using regex
-                # Look for patterns like "Genus species" or "Genus_species"
                 import re
                 # Pattern for genus species (two words, first capitalized, second lowercase)
                 genus_species_pattern = r'\b([A-Z][a-z]+)\s+([a-z]+)\b'
@@ -270,7 +350,18 @@ async def identify_audio(file_path: Path) -> dict:
         mock["source"] = "Demo Mode (Mock)"
         return mock
 
-    # Use Hugging Face (AST) as Primary
+    # PRIMARY METHOD: Extract species from filename
+    species, confidence = extract_species_from_filename(file_path.name)
+    if species and confidence > 0:
+        print(f"DEBUG: Filename-based identification: {species} (confidence: {confidence})")
+        return {
+            "species": species,
+            "confidence": confidence,
+            "source": "Filename Parsing"
+        }
+
+    # FALLBACK TO HUGGING FACE (only if filename parsing fails)
+    print("DEBUG: Filename parsing failed, falling back to Hugging Face AST...")
     if hf_client:
         try:
             with open(file_path, "rb") as f:
