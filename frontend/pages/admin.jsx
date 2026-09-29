@@ -22,10 +22,13 @@ export default function AdminPanel() {
   }, []);
 
   // Fetch only pending observations
-  const { data: observations, error, mutate } = useSWR(
+  const { data: allObservations, error, mutate } = useSWR(
     `/observations?verification_status=pending&limit=100`,
     fetcher
   );
+
+  // Filter observations with confidence below 85%
+  const observations = allObservations?.filter(obs => obs.confidence < 0.85) || [];
 
   const handleStatusUpdate = async (id, newStatus) => {
     try {
@@ -64,7 +67,7 @@ export default function AdminPanel() {
         <header className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Pannello di Validazione</h1>
-            <p className="text-muted dark:text-gray-400">Revisione scientifica delle osservazioni AI</p>
+            <p className="text-muted dark:text-gray-400">Revisione scientifica delle osservazioni AI con confidenza < 85%</p>
           </div>
           <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-4 py-2 rounded-full text-sm font-medium border border-blue-100 dark:border-blue-800">
             Modalità Amministratore
@@ -77,7 +80,7 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {!observations || observations.length === 0 ? (
+        {!allObservations || allObservations.length === 0 ? (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-12 text-center border border-gray-100 dark:border-gray-700 transition-colors">
             <LuTriangleAlert className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Tutto pulito!</h2>
@@ -85,52 +88,72 @@ export default function AdminPanel() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
-            {observations.map((obs) => (
-              <div 
-                key={obs.id} 
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors hover:shadow-md"
-              >
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
-                    {obs.method === "image" && obs.media_url ? (
-                      <img src={obs.media_url} alt={obs.species} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted dark:text-gray-500">
-                        🎵
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-gray-900 dark:text-white">{obs.species}</p>
-                      <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
-                        {obs.method === "image" ? "Foto" : "Audio"}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted dark:text-gray-400">
-                      {formatDate(obs.date_time)} · Sicurezza: <span className="font-semibold">{formatConfidence(obs.confidence)}</span>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 shrink-0">
-                  <button 
-                    onClick={() => handleStatusUpdate(obs.id, "excluded")}
-                    className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
-                    title="Scarta osservazione"
-                  >
-                    <LuX className="w-5 h-5" />
-                  </button>
-                  <button 
-                    onClick={() => handleStatusUpdate(obs.id, "confirmed")}
-                    className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors"
-                    title="Conferma osservazione"
-                  >
-                    <LuCheck className="w-5 h-5" />
-                  </button>
-                </div>
+            {observations.length === 0 ? (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-12 text-center border border-gray-100 dark:border-gray-700 transition-colors">
+                <LuTriangleAlert className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Ottimo!</h2>
+                <p className="text-muted dark:text-gray-400">Tutte le osservazioni in attesa hanno confidenza ≥ 85%. Nessuna azione richiesta.</p>
+                <p className="text-xs text-muted dark:text-gray-500 mt-2">
+                  Totale osservazioni pendenti: {allObservations.length}
+                </p>
               </div>
-            ))}
+            ) : (
+              <>
+                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                    Mostrando {observations.length} di {allObservations.length} osservazioni pendenti (confidenza < 85%)
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 gap-4">
+                  {observations.map((obs) => (
+                    <div 
+                      key={obs.id} 
+                      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors hover:shadow-md"
+                    >
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+                          {obs.method === "image" && obs.media_url ? (
+                            <img src={obs.media_url} alt={obs.species} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-muted dark:text-gray-500">
+                              🎵
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-gray-900 dark:text-white">{obs.species}</p>
+                            <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
+                              {obs.method === "image" ? "Foto" : "Audio"}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted dark:text-gray-400">
+                            {formatDate(obs.date_time)} · Sicurezza: <span className="font-semibold bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-100 px-2 py-0.5 rounded">{formatConfidence(obs.confidence)}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <button 
+                          onClick={() => handleStatusUpdate(obs.id, "excluded")}
+                          className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+                          title="Scarta osservazione"
+                        >
+                          <LuX className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => handleStatusUpdate(obs.id, "confirmed")}
+                          className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors"
+                          title="Conferma osservazione"
+                        >
+                          <LuCheck className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
