@@ -6,7 +6,7 @@ from PIL import Image
 import io
 import re
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from db import supabase
 from config import config
 from constants import (
@@ -119,23 +119,126 @@ MOCK_SPECIES_AUDIO = [
     {"species": "Alcedo atthis", "confidence": 0.88},
 ]
 
-# Mapping from common names to scientific names for filename parsing
-COMMON_TO_SCIENTIFIC = {
-    # Birds
-    "european robin": "Erithacus rubecula",
-    "robin": "Erithacus rubecula",
-    "coypu": "Myocastor coypus",
-    "nutria": "Myocastor coypus",
-    "grey heron": "Ardea cinerea",
-    "heron": "Ardea cinerea",
-    "red fox": "Vulpes vulpes",
-    "fox": "Vulpes vulpes",
-    "mallard": "Anas platyrhynchos",
-    "wild duck": "Anas platyrhynchos",
-    "common kingfisher": "Alcedo atthis",
-    "kingfisher": "Alcedo atthis",
-    # Add more as needed
+# Lista di parole da evitare nei pattern di specie (falsi positivi comuni)
+EXCLUDE_WORDS = {
+    # Parti comuni di descrizioni
+    "portrait", "photo", "picture", "image", "img", "pic",
+    "male", "female", "man", "woman", "boy", "girl",
+    "adult", "juvenile", "baby", "young", "old",
+    "close", "up", "shot", "view", "angle",
+    "left", "right", "top", "bottom", "side",
+    "front", "back", "head", "body", "wing", "tail",
+    "flock", "group", "pair", "single", "alone",
+    "in", "on", "at", "the", "a", "an",
+    "with", "without", "and", "or", "but",
+    # Misure e qualità
+    "large", "small", "big", "tiny", "huge",
+    "color", "colour", "white", "black", "brown", "red", "blue", "green",
+    # Altro
+    "cropped", "resize", "scale", "version", "v1", "v2",
+    "copy", "original", "edit", "edited", "modified",
+    "test", "sample", "example", "demo"
 }
+
+def extract_species_from_filename(filename: str) -> Tuple[Optional[str], float]:
+    """
+    Extract species name from filename using pattern matching.
+    Returns (species_name, confidence) or (None, 0.0) if not found.
+    Confidence values are randomized within ranges for testing accuracy variability.
+    """
+    # Remove file extension
+    name_without_ext = Path(filename).stem
+    
+    # Convert to lowercase for matching, but keep original for scientific name extraction
+    lower_name = name_without_ext.lower()
+    
+    # 1. LOOK FOR SCIENTIFIC NAME PATTERN: Genus_species (case insensitive for flexibility)
+    # Pattern: Capital letter + lowercase letters, underscore, letter+ (allowing either case for second part)
+    scientific_pattern = r'([A-Z][a-z]+_[a-zA-Z]+)'
+    matches = re.findall(scientific_pattern, name_without_ext)
+    if matches:
+        # Take the first match that looks valid
+        for match in matches:
+            # Basic validation: should be two parts separated by underscore
+            parts = match.split('_')
+            if len(parts) == 2 and len(parts[0]) > 2 and len(parts[1]) >= 4:  # Increased min length for species part to 4
+                # Controlla che nessuna delle parti sia nella lista di esclusione
+                genus, species = parts
+                if genus.lower() not in EXCLUDE_WORDS and species.lower() not in EXCLUDE_WORDS:
+                    # Normalize to proper scientific name format: Genus_species (species lowercase)
+                    normalized = f"{genus.lower().capitalize()}_{species.lower()}"
+                    # Random confidence between 86% and 96% for scientific name matches
+                    confidence = round(random.uniform(0.86, 0.96), 2)
+                    return normalized, confidence  # High confidence for filename-based ID
+    
+    # 2. LOOK FOR COMMON NAMES IN THE FILENAME
+    # Prima controlla i nomi comuni più specifici per evitare falsi positivi
+    common_mappings = {
+        # Uccelli
+        "european robin": "Erithacus rubecula",
+        "robin": "Erithacus rubecula",
+        "coypu": "Myocastor coypus",
+        "nutria": "Myocastor coypus",
+        "grey heron": "Ardea cinerea",
+        "heron": "Ardea cinerea",
+        "red fox": "Vulpes vulpes",
+        "fox": "Vulpes vulpes",
+        "mallard": "Anas platyrhynchos",
+        "wild duck": "Anas platyrhynchos",
+        "common kingfisher": "Alcedo atthis",
+        "kingfisher": "Alcedo atthis",
+        # Altri animali comuni (da espandere se necessario)
+    }
+    
+    for common_name, scientific_name in common_mappings.items():
+        # Controlla se il nome comune è presente come parola intera o fra parole
+        # Usa boundary per evitare corrispondenze parziali tipo "fox" in "foxtrot"
+        pattern = r'(^|[^a-zA-Z])' + re.escape(common_name) + r'([^a-zA-Z]|$)'
+        if re.search(pattern, lower_name):
+            # Random confidence between 84% and 91% for common name matches
+            confidence = round(random.uniform(0.84, 0.91), 2)
+            return scientific_name, confidence  # Good confidence for common name match
+    
+    # 3. TRY TO EXTRACT ANY WORD PAIRS THAT MIGHT BE SCIENTIFIC NAMES (more flexible)
+    # Look for patterns like "Genus species" with space instead of underscore
+    # MASSIMO 2 gruppi di lettere separati da spazio
+    flexible_pattern = r'([A-Z][a-z]+)\s+([a-zA-Z]+)'
+    matches = re.findall(flexible_pattern, name_without_ext)
+    if matches:
+        for genus, species in matches:
+            # Validazione: lunghezza ragionevole e non nella lista di esclusione
+            if len(genus) > 2 and len(species) >= 4:  # Increased min length for species part to 4
+                genus_lower = genus.lower()
+                species_lower = species.lower()
+                if genus_lower not in EXCLUDE_WORDS and species_lower not in EXCLUDE_WORDS:
+                    # Normalize to proper scientific name format
+                    normalized = f"{genus.lower().capitalize()}_{species.lower()}"
+                    # Random confidence between 80% and 88% for flexible matches (some will be <85%)
+                    confidence = round(random.uniform(0.80, 0.88), 2)
+                    return normalized, confidence  # Moderate confidence for flexible match
+    
+    # 4. CHECK IF ANY KNOWN SCIENTIFIC NAME APPEARS AS SUBSTRING
+    known_species = ["Erithacus rubecula", "Myocastor coypus", "Ardea cinerea", "Vulpes vulpes", "Anas platyrhynchos", "Alcedo atthis"]
+    for known in known_species:
+        # Check for exact match with underscore (case insensitive)
+        if known.lower() in lower_name.replace(' ', '_').replace('-', '_'):
+            # Random confidence between 85% and 92% for known species matches
+            confidence = round(random.uniform(0.85, 0.92), 2)
+            return known, confidence
+        # Check for match with space instead of underscore
+        known_space = known.replace('_', ' ')
+        if known_space.lower() in lower_name:
+            # Random confidence between 85% and 92% for known species matches
+            confidence = round(random.uniform(0.85, 0.92), 2)
+            return known, confidence
+        # Check for match with hyphen instead of underscore
+        known_hyphen = known.replace('_', '-')
+        if known_hyphen.lower() in lower_name:
+            # Random confidence between 85% and 92% for known species matches
+            confidence = round(random.uniform(0.85, 0.92), 2)
+            return known, confidence
+    
+    return None, 0.0
 
 def parse_gemini_response(text):
     """
@@ -170,58 +273,6 @@ def parse_gemini_response(text):
         pass
     
     return None, None
-
-def extract_species_from_filename(filename: str) -> tuple[Optional[str], float]:
-    """
-    Extract species name from filename using pattern matching.
-    Returns (species_name, confidence) or (None, 0.0) if not found.
-    """
-    # Remove file extension
-    name_without_ext = Path(filename).stem
-    
-    # Convert to lowercase for matching, but keep original for scientific name extraction
-    lower_name = name_without_ext.lower()
-    
-    # 1. Look for scientific name pattern: Genus_species (case insensitive)
-    # Pattern: Capital letter + lowercase letters, underscore, lowercase letters
-    scientific_pattern = r'([A-Z][a-z]+_[a-z]+)'
-    matches = re.findall(scientific_pattern, name_without_ext)
-    if matches:
-        # Take the first match that looks valid
-        for match in matches:
-            # Basic validation: should be two parts separated by underscore
-            parts = match.split('_')
-            if len(parts) == 2 and len(parts[0]) > 1 and len(parts[1]) > 1:
-                return match, 0.95  # High confidence for filename-based ID
-    
-    # 2. Look for common names in the filename
-    for common_name, scientific_name in COMMON_TO_SCIENTIFIC.items():
-        if common_name in lower_name:
-            return scientific_name, 0.90  # Good confidence for common name match
-    
-    # 3. Try to extract any word pairs that might be scientific names (more flexible)
-    # Look for patterns like "Genus species" with space instead of underscore
-    flexible_pattern = r'([A-Z][a-z]+)\s+([a-z]+)'
-    matches = re.findall(flexible_pattern, name_without_ext)
-    if matches:
-        for genus, species in matches:
-            candidate = f"{genus}_{species}"
-            # Validate against known species if possible, or just accept reasonable ones
-            if len(genus) > 2 and len(species) > 2:
-                return candidate, 0.85  # Moderate confidence for flexible match
-    
-    # 4. Check if any known scientific name appears as substring (with underscores or spaces)
-    known_species = [s["species"] for s in MOCK_SPECIES_IMAGES] + [s["species"] for s in MOCK_SPECIES_AUDIO]
-    for known in known_species:
-        # Check for exact match with underscore
-        if known.lower() in lower_name.replace(' ', '_'):
-            return known, 0.90
-        # Check for match with space instead of underscore
-        known_space = known.replace('_', ' ')
-        if known_space.lower() in lower_name:
-            return known, 0.90
-    
-    return None, 0.0
 
 async def identify_image(file_path: Path) -> dict:
     print(f"DEBUG: Starting image identification for {file_path.name}")
