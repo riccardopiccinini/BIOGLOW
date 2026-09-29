@@ -128,7 +128,7 @@ export default function AdminPanel() {
                             </span>
                           </div>
                           <p className="text-sm text-muted dark:text-gray-400">
-                            {formatDate(obs.date_time)} · Sicurezza: <span className="font-semibold bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-100 px-2 py-0.5 rounded">{formatConfidence(obs.confidence)}</span>
+                            {formatDate(obs.date_time, "dd/MM/yyyy HH:mm:ss")} · Sicurezza: <span className="font-semibold bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-100 px-2 py-0.5 rounded">{formatConfidence(obs.confidence)}</span>
                           </p>
                         </div>
                       </div>
